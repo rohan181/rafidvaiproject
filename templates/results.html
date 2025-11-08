@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrier Concentration Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #f8f9fa;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .card-header {
+            background-color: #343a40;
+            color: white;
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <h2 class="text-center mb-4">Carrier Concentration Results</h2>
+                
+                <!-- Chart in cm -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Carrier Concentration N(x) vs. x (in cm)
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="cmChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chart in Angstroms -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Carrier Concentration N(x) vs. x (in Ångströms)
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="angstromChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- N(x) at tox -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        N(x) at Oxide Thickness
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Oxide Thickness (cm):</strong> {{ tox|floatformat:-8 }}</p>
+                                <p><strong>Oxide Thickness (Å):</strong> {{ tox_A|floatformat:2 }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>N(x) at Oxide Thickness:</strong> {{ N_x_tox|floatformat:-2 }} cm<sup>-3</sup></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'index' %}" class="btn btn-secondary">Return to Calculator</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse the chart data from Django view
+        const chartData = JSON.parse('{{ chart_data|safe }}');
+        
+        // Convert x values to Angstroms
+        const xValsA = chartData.x_vals.map(x => x * 1e8);
+        
+        // Create array of points for the N(x) values
+        const dataPoints = chartData.N_x_vals.map((n, i) => ({
+            x: chartData.x_vals[i],
+            y: n
+        }));
+        
+        const dataPointsA = chartData.N_x_vals.map((n, i) => ({
+            x: xValsA[i],
+            y: n
+        }));
+        
+        // Prepare data for cm chart
+        const cmCtx = document.getElementById('cmChart').getContext('2d');
+        new Chart(cmCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'N(x)',
+                        data: dataPoints,
+                        borderColor: 'blue',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'N(x) at tox',
+                        data: [{
+                            x: chartData.tox,
+                            y: chartData.N_x_tox
+                        }],
+                        backgroundColor: 'red',
+                        borderColor: 'red',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'x (cm)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toExponential(2);
+                            }
+                        }
+                    },
+                    y: {
+                        type: 'logarithmic',
+                        title: {
+                            display: true,
+                            text: 'N(x) (cm⁻³)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '10^' + Math.log10(value).toFixed(0);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `N(x): ${context.parsed.y.toExponential(2)} cm⁻³`;
+                            },
+                            title: function(context) {
+                                return `x: ${context[0].parsed.x.toExponential(2)} cm`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Prepare data for Angstrom chart
+        const angstromCtx = document.getElementById('angstromChart').getContext('2d');
+        new Chart(angstromCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'N(x)',
+                        data: dataPointsA,
+                        borderColor: 'green',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'N(x) at tox',
+                        data: [{
+                            x: chartData.tox_A,
+                            y: chartData.N_x_tox
+                        }],
+                        backgroundColor: 'red',
+                        borderColor: 'red',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'x (Å)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    y: {
+                        type: 'logarithmic',
+                        title: {
+                            display: true,
+                            text: 'N(x) (cm⁻³)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '10^' + Math.log10(value).toFixed(0);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `N(x): ${context.parsed.y.toExponential(2)} cm⁻³`;
+                            },
+                            title: function(context) {
+                                return `x: ${context[0].parsed.x.toFixed(2)} Å`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

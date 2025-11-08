@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carrier Concentration Plot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+        .form-section {
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Carrier Concentration N(x)</h1>
+
+    <div class="form-section">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Generate Plot</button>
+        </form>
+    </div>
+
+    {% if x_cm %}
+    <hr>
+
+    <h2>N(x) vs x (in cm)</h2>
+    <canvas id="chartCM" width="800" height="400"></canvas>
+
+    <h2>N(x) vs x (in Ångström)</h2>
+    <canvas id="chartA" width="800" height="400"></canvas>
+
+    <script>
+        const x_cm = {{ x_cm|safe }};
+        const x_A = {{ x_A|safe }};
+        const N_x = {{ N_x|safe }};
+        const tox_cm = {{ tox_cm }};
+        const tox_A = {{ tox_A }};
+        const N_x_tox = {{ N_x_tox }};
+
+        const formatSci = (val) => {
+            return val === 0 ? '0' : val.toExponential(1).replace('e+', 'e');
+        };
+
+        const highlightTox = (x_array, tox_val, N_val) => {
+            return x_array.map(x => Math.abs(x - tox_val) < 1e-12 ? N_val : null);
+        };
+
+        const optionsTemplate = (xLabel) => ({
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Carrier Concentration N(x) vs x (${xLabel})`
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `N(x): ${formatSci(context.parsed.y)}`
+                    }
+                },
+                legend: {
+                    labels: {
+                        filter: (item) => item.text !== undefined
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'logarithmic',
+                    title: {
+                        display: true,
+                        text: 'N(x) (cm⁻³)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return formatSci(value);
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: `x (${xLabel})`
+                    }
+                }
+            }
+        });
+
+        // --- Chart in cm ---
+        const ctx1 = document.getElementById('chartCM').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: x_cm,
+                datasets: [
+                    {
+                        label: 'N(x)',
+                        data: N_x,
+                        borderColor: 'blue',
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: `N(tox) = ${formatSci(N_x_tox)}`,
+                        data: highlightTox(x_cm, tox_cm, N_x_tox),
+                        pointRadius: 6,
+                        pointBackgroundColor: 'red',
+                        borderColor: 'red',
+                        showLine: false
+                    }
+                ]
+            },
+            options: optionsTemplate('cm')
+        });
+
+        // --- Chart in Å ---
+        const ctx2 = document.getElementById('chartA').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: x_A,
+                datasets: [
+                    {
+                        label: 'N(x)',
+                        data: N_x,
+                        borderColor: 'green',
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: `N(tox) = ${formatSci(N_x_tox)}`,
+                        data: highlightTox(x_A, tox_A, N_x_tox),
+                        pointRadius: 6,
+                        pointBackgroundColor: 'red',
+                        borderColor: 'red',
+                        showLine: false
+                    }
+                ]
+            },
+            options: optionsTemplate('Å')
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

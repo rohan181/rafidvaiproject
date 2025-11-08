@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrier Concentration Calculator</title>
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js & Zoom plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.js"></script>
+    <style>
+        body {
+            padding: 2rem 0;
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            background-color: #343a40;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background-color: #343a40;
+            border-color: #343a40;
+        }
+
+        .btn-primary:hover {
+            background-color: #212529;
+            border-color: #212529;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .zoom-buttons {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .diffusion-section {
+            border-left: 4px solid #ff9800;
+            padding-left: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">Ion Implanted Impurity Profile Optimization</h2>
+        <div class="row">
+            <!-- Input Form -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h4>Input Parameters</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            <!-- Metal Type -->
+                            <div class="mb-3">
+                                <label for="metal-select" class="form-label">Implant Ion Species</label>
+                                <select class="form-select" id="metal-select" name="metal_type">
+                                    <option value="Arsenic">Arsenic In Silicon</option>
+                                    <option value="Phosphorus">Phosphorus In Silicon</option>
+                                    <option value="Boron">Boron In Silicon</option>
+                                    <option value="Silicon in GaAs">Silicon In Gallium Arsenide</option>
+                                    <option value="Germanium in GaAs">Germanium in Gallium Arsenide</option>
+                                    <option value="Phosphorus in SiC">Phosphorus in SiC</option>
+                                    <option value="Boron in SiC">Boron in SiC</option>
+                                    <option value="Gallium in Nitrogen">Gallium in Nitrogen (GaN)</option>
+                                </select>
+                            </div>
+
+                            <!-- Ion Energy -->
+                            <div class="mb-3">
+                                <label for="energy-select" class="form-label">Ion Energy</label>
+                                <select class="form-select" id="energy-select" name="ion_energy">
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="150">150</option>
+                                </select>
+                            </div>
+
+                            <!-- Substrate Concentration nb -->
+                            <div class="mb-3">
+                                <label for="nb" class="form-label">Substrate Concentration (cm⁻³)</label>
+                                <input type="number" class="form-control" id="nb" name="nb" value="1e15" step="any">
+                            </div>
+
+                            <!-- Ion Dose q -->
+                            <div class="mb-3">
+                                <label for="q" class="form-label">Ion Dose Charge (cm⁻²)</label>
+                                <input type="number" class="form-control" id="q" name="q" value="1e12" step="any">
+                            </div>
+
+                            <!-- Oxide Thickness tox -->
+                            <div class="mb-3">
+                                <label for="tox" class="form-label">Oxide Thickness (cm)</label>
+                                <input type="number" class="form-control" id="tox" name="tox" value="0.5e-5" step="any">
+                            </div>
+
+                            <!-- Diffusion Parameters -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning text-dark">Diffusion Parameters After Anneling</div>
+                                <div class="card-body">
+                                    <!-- Anneal Time -->
+                                    <div class="mb-3">
+                                        <label for="anneal_time_s" class="form-label">Anneal Time (seconds)</label>
+                                        <input type="number" class="form-control" id="anneal_time_s"
+                                            name="anneal_time_s" value="50" min="1" max="7200" step="1">
+                                        <small class="form-text text-muted">Range: 1 to 7200 seconds (2 hours)</small>
+                                    </div>
+
+                                    <!-- Anneal Temperature -->
+                                    <div class="mb-3">
+                                        <label for="anneal_temp_c" class="form-label">Anneal Temperature (°C)</label>
+                                        <input type="number" class="form-control" id="anneal_temp_c"
+                                            name="anneal_temp_c" value="1000" min="700" max="1200" step="50">
+                                        <small class="form-text text-muted">Range: 700°C to 1200°C</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary"
+                                    onclick="calculateResults()">Calculate</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="col-md-8 results-section" id="resultsSection">
+                <!-- Selected Parameters -->
+                <div class="card mb-4">
+                    <div class="card-header"><span>Selected Parameters Without Anneling </span><span
+                            style="margin-left: 60px;">Selected Parameters With Anneling</span></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Ion Species:</strong> <span id="metalType"></span></p>
+                                <p><strong>Ion Energy:</strong> <span id="ionEnergy"></span></p>
+                                <p><strong>Rp:</strong> <span id="ionRP"></span> cm</p>
+                                <p><strong>σ₀:</strong> <span id="ionSig"></span> cm</p>
+                            </div>
+                            <div class="col-md-6 diffusion-section">
+                                <p><strong>Anneal Time:</strong> <span id="annealTime"></span> seconds (<span
+                                        id="annealTimeMin"></span> minutes)</p>
+                                <p><strong>Anneal Temperature:</strong> <span id="annealTemp"></span> °C</p>
+                                <p><strong>Diffusion Coefficient (D):</strong> <span id="diffCoeff"></span> cm²/s</p>
+                                <p><strong>σ after diffusion:</strong> <span id="sigAfterDiff"></span> cm</p>
+                                <p><strong>Rp′ (Anneling Ion Range):</strong> <span id="rpPrime"></span> cm</p>
+                                <p><strong>ΔRp = Rp′ − Rp:</strong> <span id="deltaRp"></span> cm</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- N(x) vs x (cm) - Single Chart -->
+                <div class="card mb-4">
+                    <div class="card-header">N(x,t) vs. x (cm)</div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="cmChart"></canvas></div>
+                        <div class="zoom-buttons">
+                            <button id="resetZoomCm" class="btn btn-sm btn-secondary">Reset Zoom</button>
+                            <button id="zoomInCm" class="btn btn-sm btn-secondary">Zoom In</button>
+                            <button id="zoomOutCm" class="btn btn-sm btn-secondary">Zoom Out</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Oxide Thickness Slice -->
+                <div class="card mb-4">
+                    <div class="card-header">N(x) at Oxide Thickness</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Oxide Thickness(XOX):</strong> <span id="toxValue"></span> cm</p>
+                                <p><strong>N(x) As-implanted:</strong> <span id="nxToxStatic"></span> cm⁻³</p>
+                            </div>
+                            <div class="col-md-6 diffusion-section">
+                                <p><strong>N(x) After Diffusion:</strong> <span id="nxToxDiff"></span> cm⁻³</p>
+                                <p><strong>Concentration Change:</strong> <span id="concChange"></span>%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Junction Depth Information -->
+                <div class="card mb-4">
+                    <div class="card-header">Junction Depth Without Anneling<span style="margin-left: 100px;">Junction
+                            Depth With Anneling</span></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Species Implanted Junction Depth (xj1s):</strong> <span id="xjStatic"></span>
+                                    cm</p>
+                                <p><strong>Species Implanted Effective Junction(xj1s - XOX):</strong> <span
+                                        id="xjEffStatic"></span> cm</p>
+                            </div>
+                            <div class="col-md-6 diffusion-section">
+                                <p><strong>Diffused Junction Depth(xj2s):</strong> <span id="xjDiff"></span> cm</p>
+                                <p><strong>Diffused Effective Junction(xj2s - XOX):</strong> <span
+                                        id="xjEffDiff"></span> cm</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Semiconductor Type Information -->
+<div class="card mb-4" id="semiconductorTypeCard" style="display: none;">
+    <div class="card-header">Semiconductor Type Information</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12">
+                <p><strong>Semiconductor Type:</strong> <span id="semiconductorType" class="badge"></span></p>
+                <p><strong>Temperature Threshold:</strong> 550°C</p>
+                <p><small class="text-muted">
+                    For Gallium Arsenide materials: Above 550°C = n-type, Below 550°C = p-type
+                </small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        // Metal ion data from Django backend
+        // In your Django template, replace the line above with:
+        // const metalIonData = {{ metal_ion_data_json|safe }};
+        const metalIonData = {
+            'Arsenic': {
+                "10.00 keV": { "rp": 124e-8, "sig": 47e-8 },
+                "11.00 keV": { "rp": 131e-8, "sig": 49e-8 },
+                "12.00 keV": { "rp": 139e-8, "sig": 51e-8 },
+                "13.00 keV": { "rp": 146e-8, "sig": 54e-8 },
+                "14.00 keV": { "rp": 154e-8, "sig": 56e-8 },
+                "15.00 keV": { "rp": 161e-8, "sig": 58e-8 },
+                "16.00 keV": { "rp": 168e-8, "sig": 60e-8 },
+                "17.00 keV": { "rp": 175e-8, "sig": 63e-8 },
+                "18.00 keV": { "rp": 182e-8, "sig": 65e-8 },
+                "20.00 keV": { "rp": 196e-8, "sig": 69e-8 },
+                "22.50 keV": { "rp": 213e-8, "sig": 74e-8 },
+                "25.00 keV": { "rp": 230e-8, "sig": 79e-8 },
+                "27.50 keV": { "rp": 246e-8, "sig": 84e-8 },
+                "30.00 keV": { "rp": 262e-8, "sig": 89e-8 },
+                "32.50 keV": { "rp": 278e-8, "sig": 93e-8 },
+                "35.00 keV": { "rp": 294e-8, "sig": 98e-8 },
+                "37.50 keV": { "rp": 310e-8, "sig": 102e-8 },
+                "40.00 keV": { "rp": 326e-8, "sig": 107e-8 },
+                "45.00 keV": { "rp": 357e-8, "sig": 116e-8 },
+                "50.00 keV": { "rp": 388e-8, "sig": 124e-8 },
+                "55.00 keV": { "rp": 419e-8, "sig": 133e-8 },
+                "60.00 keV": { "rp": 449e-8, "sig": 141e-8 },
+                "65.00 keV": { "rp": 480e-8, "sig": 149e-8 },
+                "70.00 keV": { "rp": 510e-8, "sig": 158e-8 },
+                "80.00 keV": { "rp": 571e-8, "sig": 174e-8 },
+                "90.00 keV": { "rp": 631e-8, "sig": 190e-8 },
+                "100.00 keV": { "rp": 692e-8, "sig": 206e-8 },
+                "110.00 keV": { "rp": 753e-8, "sig": 221e-8 },
+                "120.00 keV": { "rp": 813e-8, "sig": 237e-8 },
+                "130.00 keV": { "rp": 875e-8, "sig": 252e-8 },
+                "140.00 keV": { "rp": 936e-8, "sig": 267e-8 },
+                "150.00 keV": { "rp": 997e-8, "sig": 282e-8 },
+                "160.00 keV": { "rp": 1059e-8, "sig": 297e-8 },
+                "170.00 keV": { "rp": 1120e-8, "sig": 312e-8 },
+                "180.00 keV": { "rp": 1181e-8, "sig": 326e-8 },
+                "200.00 keV": { "rp": 1303e-8, "sig": 355e-8 },
+                "225.00 keV": { "rp": 1456e-8, "sig": 389e-8 },
+                "250.00 keV": { "rp": 1610e-8, "sig": 424e-8 },
+                "275.00 keV": { "rp": 1766e-8, "sig": 458e-8 },
+                "300.00 keV": { "rp": 1924e-8, "sig": 491e-8 },
+                "325.00 keV": { "rp": 2082e-8, "sig": 525e-8 },
+                "350.00 keV": { "rp": 2243e-8, "sig": 557e-8 },
+                "375.00 keV": { "rp": 2404e-8, "sig": 590e-8 },
+                "400.00 keV": { "rp": 2566e-8, "sig": 622e-8 },
+                "450.00 keV": { "rp": 2892e-8, "sig": 685e-8 },
+                "500.00 keV": { "rp": 3221e-8, "sig": 746e-8 },
+                "550.00 keV": { "rp": 3551e-8, "sig": 806e-8 },
+                "600.00 keV": { "rp": 3881e-8, "sig": 864e-8 },
+                "650.00 keV": { "rp": 4213e-8, "sig": 920e-8 },
+                "700.00 keV": { "rp": 4544e-8, "sig": 974e-8 },
+                "800.00 keV": { "rp": 5206e-8, "sig": 1079e-8 },
+                "900.00 keV": { "rp": 5864e-8, "sig": 1178e-8 },
+                "1.00 MeV": { "rp": 6519e-8, "sig": 1271e-8 },
+                "1.10 MeV": { "rp": 7168e-8, "sig": 1359e-8 },
+                "1.20 MeV": { "rp": 7810e-8, "sig": 1441e-8 },
+                "1.30 MeV": { "rp": 8445e-8, "sig": 1520e-8 },
+                "1.40 MeV": { "rp": 9072e-8, "sig": 1594e-8 },
+                "1.50 MeV": { "rp": 9691e-8, "sig": 1664e-8 },
+                "1.60 MeV": { "rp": 1.03e-4, "sig": 1730e-8 },
+                "1.70 MeV": { "rp": 1.09e-4, "sig": 1792e-8 },
+                "1.80 MeV": { "rp": 1.15e-4, "sig": 1852e-8 },
+                "2.00 MeV": { "rp": 1.26e-4, "sig": 1964e-8 },
+                "2.25 MeV": { "rp": 1.40e-4, "sig": 2091e-8 },
+                "2.50 MeV": { "rp": 1.54e-4, "sig": 2202e-8 },
+                "2.75 MeV": { "rp": 1.66e-4, "sig": 2301e-8 },
+                "3.00 MeV": { "rp": 1.79e-4, "sig": 2389e-8 },
+                "3.25 MeV": { "rp": 1.90e-4, "sig": 2467e-8 },
+                "3.50 MeV": { "rp": 2.02e-4, "sig": 2538e-8 },
+                "3.75 MeV": { "rp": 2.13e-4, "sig": 2601e-8 },
+                "4.00 MeV": { "rp": 2.23e-4, "sig": 2659e-8 },
+                "4.50 MeV": { "rp": 2.43e-4, "sig": 2766e-8 },
+                "5.00 MeV": { "rp": 2.62e-4, "sig": 2857e-8 },
+                "5.50 MeV": { "rp": 2.79e-4, "sig": 2934e-8 },
+                "6.00 MeV": { "rp": 2.96e-4, "sig": 3001e-8 },
+                "6.50 MeV": { "rp": 3.12e-4, "sig": 3060e-8 },
+                "7.00 MeV": { "rp": 3.27e-4, "sig": 3113e-8 },
+                "8.00 MeV": { "rp": 3.56e-4, "sig": 3215e-8 },
+                "9.00 MeV": { "rp": 3.83e-4, "sig": 3299e-8 },
+                "10.00 MeV": { "rp": 4.08e-4, "sig": 3372e-8 }
+            },
+            'Phosphorus': {
+                "10.00 keV": { "rp": 169e-8, "sig": 60e-8 },
+                "15.00 keV": { "rp": 235e-8, "sig": 80e-8 },
+                "20.00 keV": { "rp": 300e-8, "sig": 98e-8 },
+                "30.00 keV": { "rp": 429e-8, "sig": 133e-8 },
+                "40.00 keV": { "rp": 559e-8, "sig": 166e-8 },
+                "50.00 keV": { "rp": 690e-8, "sig": 198e-8 },
+                "60.00 keV": { "rp": 822e-8, "sig": 230e-8 },
+                "80.00 keV": { "rp": 1084e-8, "sig": 292e-8 },
+                "100.00 keV": { "rp": 1342e-8, "sig": 351e-8 },
+                "150.00 keV": { "rp": 1979e-8, "sig": 489e-8 },
+                "200.00 keV": { "rp": 2612e-8, "sig": 615e-8 },
+                "250.00 keV": { "rp": 3242e-8, "sig": 732e-8 },
+                "300.00 keV": { "rp": 3864e-8, "sig": 843e-8 },
+                "400.00 keV": { "rp": 5069e-8, "sig": 1045e-8 },
+                "500.00 keV": { "rp": 6207e-8, "sig": 1223e-8 },
+                "600.00 keV": { "rp": 7272e-8, "sig": 1378e-8 },
+                "700.00 keV": { "rp": 8266e-8, "sig": 1514e-8 },
+                "800.00 keV": { "rp": 9194e-8, "sig": 1632e-8 },
+                "900.00 keV": { "rp": 1.01e-4, "sig": 1737e-8 },
+                "1.00 MeV": { "rp": 1.09e-4, "sig": 1830e-8 },
+                "1.10 MeV": { "rp": 1.17e-4, "sig": 1914e-8 },
+                "1.20 MeV": { "rp": 1.24e-4, "sig": 1989e-8 },
+                "1.30 MeV": { "rp": 1.31e-4, "sig": 2057e-8 },
+                "1.40 MeV": { "rp": 1.38e-4, "sig": 2119e-8 },
+                "1.50 MeV": { "rp": 1.44e-4, "sig": 2175e-8 },
+                "1.60 MeV": { "rp": 1.51e-4, "sig": 2228e-8 },
+                "1.70 MeV": { "rp": 1.57e-4, "sig": 2276e-8 },
+                "1.80 MeV": { "rp": 1.63e-4, "sig": 2322e-8 },
+                "2.00 MeV": { "rp": 1.74e-4, "sig": 2404e-8 },
+                "2.25 MeV": { "rp": 1.87e-4, "sig": 2493e-8 },
+                "2.50 MeV": { "rp": 2.00e-4, "sig": 2572e-8 },
+                "2.75 MeV": { "rp": 2.13e-4, "sig": 2642e-8 },
+                "3.00 MeV": { "rp": 2.24e-4, "sig": 2705e-8 },
+                "3.25 MeV": { "rp": 2.36e-4, "sig": 2763e-8 },
+                "3.50 MeV": { "rp": 2.47e-4, "sig": 2816e-8 },
+                "3.75 MeV": { "rp": 2.58e-4, "sig": 2865e-8 },
+                "4.00 MeV": { "rp": 2.69e-4, "sig": 2910e-8 },
+                "4.50 MeV": { "rp": 2.89e-4, "sig": 2993e-8 },
+                "5.00 MeV": { "rp": 3.09e-4, "sig": 3068e-8 },
+                "5.50 MeV": { "rp": 3.29e-4, "sig": 3135e-8 },
+                "6.00 MeV": { "rp": 3.48e-4, "sig": 3196e-8 },
+                "6.50 MeV": { "rp": 3.67e-4, "sig": 3253e-8 },
+                "7.00 MeV": { "rp": 3.85e-4, "sig": 3306e-8 },
+                "8.00 MeV": { "rp": 4.21e-4, "sig": 3402e-8 },
+                "9.00 MeV": { "rp": 4.55e-4, "sig": 3489e-8 },
+                "10.00 MeV": { "rp": 4.89e-4, "sig": 3567e-8 }
+            },
+            'Boron': {
+                "10.00 keV": { "rp": 134e-8, "sig": 40e-8 },
+                "15.00 keV": { "rp": 188e-8, "sig": 53e-8 },
+                "20.00 keV": { "rp": 243e-8, "sig": 65e-8 },
+                "30.00 keV": { "rp": 351e-8, "sig": 89e-8 },
+                "40.00 keV": { "rp": 459e-8, "sig": 110e-8 },
+                "50.00 keV": { "rp": 567e-8, "sig": 130e-8 },
+                "60.00 keV": { "rp": 674e-8, "sig": 148e-8 },
+                "80.00 keV": { "rp": 873e-8, "sig": 177e-8 },
+                "100.00 keV": { "rp": 1068e-8, "sig": 203e-8 },
+                "150.00 keV": { "rp": 1556e-8, "sig": 260e-8 },
+                "200.00 keV": { "rp": 2037e-8, "sig": 307e-8 },
+                "250.00 keV": { "rp": 2504e-8, "sig": 348e-8 },
+                "300.00 keV": { "rp": 2957e-8, "sig": 383e-8 },
+                "400.00 keV": { "rp": 3818e-8, "sig": 440e-8 },
+                "500.00 keV": { "rp": 4621e-8, "sig": 488e-8 },
+                "600.00 keV": { "rp": 5369e-8, "sig": 526e-8 },
+                "700.00 keV": { "rp": 6067e-8, "sig": 557e-8 },
+                "800.00 keV": { "rp": 6723e-8, "sig": 586e-8 },
+                "900.00 keV": { "rp": 7341e-8, "sig": 611e-8 },
+                "1.00 MeV": { "rp": 7928e-8, "sig": 632e-8 },
+                "1.10 MeV": { "rp": 8488e-8, "sig": 650e-8 },
+                "1.20 MeV": { "rp": 9023e-8, "sig": 666e-8 },
+                "1.30 MeV": { "rp": 9537e-8, "sig": 681e-8 },
+                "1.40 MeV": { "rp": 1.00e-4, "sig": 694e-8 },
+                "1.50 MeV": { "rp": 1.05e-4, "sig": 705e-8 },
+                "1.60 MeV": { "rp": 1.10e-4, "sig": 716e-8 },
+                "1.70 MeV": { "rp": 1.14e-4, "sig": 726e-8 },
+                "1.80 MeV": { "rp": 1.19e-4, "sig": 735e-8 },
+                "2.00 MeV": { "rp": 1.27e-4, "sig": 756e-8 },
+                "2.25 MeV": { "rp": 1.37e-4, "sig": 780e-8 },
+                "2.50 MeV": { "rp": 1.46e-4, "sig": 801e-8 },
+                "2.75 MeV": { "rp": 1.55e-4, "sig": 820e-8 },
+                "3.00 MeV": { "rp": 1.64e-4, "sig": 837e-8 },
+                "3.25 MeV": { "rp": 1.72e-4, "sig": 851e-8 },
+                "3.50 MeV": { "rp": 1.80e-4, "sig": 865e-8 },
+                "3.75 MeV": { "rp": 1.88e-4, "sig": 877e-8 },
+                "4.00 MeV": { "rp": 1.95e-4, "sig": 888e-8 },
+                "4.50 MeV": { "rp": 2.10e-4, "sig": 921e-8 },
+                "5.00 MeV": { "rp": 2.24e-4, "sig": 949e-8 },
+                "5.50 MeV": { "rp": 2.38e-4, "sig": 974e-8 },
+                "6.00 MeV": { "rp": 2.51e-4, "sig": 997e-8 },
+                "6.50 MeV": { "rp": 2.63e-4, "sig": 1018e-8 },
+                "7.00 MeV": { "rp": 2.76e-4, "sig": 1038e-8 },
+                "8.00 MeV": { "rp": 3.00e-4, "sig": 1102e-8 },
+                "9.00 MeV": { "rp": 3.24e-4, "sig": 1159e-8 },
+                "10.00 MeV": { "rp": 3.47e-4, "sig": 1210e-8 }
+            },
+            'Silicon in GaAs': {
+                "10.00 keV": { "rp": 1.1e-06, "sig": 8.8e-07 },
+                "11.00 keV": { "rp": 1.18e-06, "sig": 9.4e-07 },
+                "12.00 keV": { "rp": 1.27e-06, "sig": 1e-06 },
+                "13.00 keV": { "rp": 1.35e-06, "sig": 1.06e-06 },
+                "14.00 keV": { "rp": 1.44e-06, "sig": 1.12e-06 },
+                "15.00 keV": { "rp": 1.52e-06, "sig": 1.18e-06 },
+                "16.00 keV": { "rp": 1.61e-06, "sig": 1.24e-06 },
+                "17.00 keV": { "rp": 1.69e-06, "sig": 1.29e-06 },
+                "18.00 keV": { "rp": 1.77e-06, "sig": 1.35e-06 },
+                "20.00 keV": { "rp": 1.94e-06, "sig": 1.46e-06 },
+                "22.50 keV": { "rp": 2.14e-06, "sig": 1.6e-06 },
+                "25.00 keV": { "rp": 2.35e-06, "sig": 1.73e-06 },
+                "27.50 keV": { "rp": 2.56e-06, "sig": 1.85e-06 },
+                "30.00 keV": { "rp": 2.76e-06, "sig": 1.98e-06 },
+                "32.50 keV": { "rp": 2.97e-06, "sig": 2.11e-06 },
+                "35.00 keV": { "rp": 3.17e-06, "sig": 2.23e-06 },
+                "37.50 keV": { "rp": 3.38e-06, "sig": 2.35e-06 },
+                "40.00 keV": { "rp": 3.59e-06, "sig": 2.47e-06 },
+                "45.00 keV": { "rp": 4.0e-06, "sig": 2.71e-06 },
+                "50.00 keV": { "rp": 4.42e-06, "sig": 2.94e-06 },
+                "55.00 keV": { "rp": 4.84e-06, "sig": 3.17e-06 },
+                "60.00 keV": { "rp": 5.26e-06, "sig": 3.4e-06 },
+                "65.00 keV": { "rp": 5.68e-06, "sig": 3.62e-06 },
+                "70.00 keV": { "rp": 6.11e-06, "sig": 3.84e-06 },
+                "80.00 keV": { "rp": 6.96e-06, "sig": 4.27e-06 },
+                "90.00 keV": { "rp": 7.82e-06, "sig": 4.68e-06 },
+                "100.00 keV": { "rp": 8.68e-06, "sig": 5.09e-06 },
+                "110.00 keV": { "rp": 9.54e-06, "sig": 5.48e-06 },
+                "120.00 keV": { "rp": 1.04e-05, "sig": 5.87e-06 },
+                "130.00 keV": { "rp": 1.127e-05, "sig": 6.25e-06 },
+                "140.00 keV": { "rp": 1.215e-05, "sig": 6.62e-06 },
+                "150.00 keV": { "rp": 1.303e-05, "sig": 6.98e-06 },
+                "160.00 keV": { "rp": 1.391e-05, "sig": 7.34e-06 },
+                "170.00 keV": { "rp": 1.48e-05, "sig": 7.69e-06 },
+                "180.00 keV": { "rp": 1.569e-05, "sig": 8.04e-06 },
+                "200.00 keV": { "rp": 1.748e-05, "sig": 8.71e-06 },
+                "225.00 keV": { "rp": 1.975e-05, "sig": 9.52e-06 },
+                "250.00 keV": { "rp": 2.202e-05, "sig": 1.031e-05 },
+                "275.00 keV": { "rp": 2.429e-05, "sig": 1.106e-05 },
+                "300.00 keV": { "rp": 2.656e-05, "sig": 1.178e-05 },
+                "325.00 keV": { "rp": 2.881e-05, "sig": 1.247e-05 },
+                "350.00 keV": { "rp": 3.105e-05, "sig": 1.313e-05 },
+                "375.00 keV": { "rp": 3.326e-05, "sig": 1.375e-05 },
+                "400.00 keV": { "rp": 3.545e-05, "sig": 1.435e-05 },
+                "450.00 keV": { "rp": 3.975e-05, "sig": 1.547e-05 },
+                "500.00 keV": { "rp": 4.393e-05, "sig": 1.648e-05 },
+                "550.00 keV": { "rp": 4.799e-05, "sig": 1.741e-05 },
+                "600.00 keV": { "rp": 5.193e-05, "sig": 1.825e-05 },
+                "650.00 keV": { "rp": 5.574e-05, "sig": 1.902e-05 },
+                "700.00 keV": { "rp": 5.945e-05, "sig": 1.973e-05 },
+                "800.00 keV": { "rp": 6.655e-05, "sig": 2.099e-05 },
+                "900.00 keV": { "rp": 7.327e-05, "sig": 2.207e-05 },
+                "1.00 MeV": { "rp": 7.967e-05, "sig": 2.301e-05 },
+                "1.10 MeV": { "rp": 8.578e-05, "sig": 2.383e-05 },
+                "1.20 MeV": { "rp": 9.164e-05, "sig": 2.457e-05 },
+                "1.30 MeV": { "rp": 9.729e-05, "sig": 2.522e-05 },
+                "1.40 MeV": { "rp": 0.000103, "sig": 2.581e-05 },
+                "1.50 MeV": { "rp": 0.000108, "sig": 2.635e-05 },
+                "1.60 MeV": { "rp": 0.000113, "sig": 2.683e-05 },
+                "1.70 MeV": { "rp": 0.000118, "sig": 2.728e-05 },
+                "1.80 MeV": { "rp": 0.000123, "sig": 2.77e-05 },
+                "2.00 MeV": { "rp": 0.000132, "sig": 2.845e-05 },
+                "2.25 MeV": { "rp": 0.000143, "sig": 2.927e-05 },
+                "2.50 MeV": { "rp": 0.000154, "sig": 2.997e-05 },
+                "2.75 MeV": { "rp": 0.000164, "sig": 3.058e-05 },
+                "3.00 MeV": { "rp": 0.000174, "sig": 3.111e-05 },
+                "3.25 MeV": { "rp": 0.000183, "sig": 3.159e-05 },
+                "3.50 MeV": { "rp": 0.000192, "sig": 3.202e-05 },
+                "3.75 MeV": { "rp": 0.000201, "sig": 3.241e-05 },
+                "4.00 MeV": { "rp": 0.00021, "sig": 3.276e-05 },
+                "4.50 MeV": { "rp": 0.000226, "sig": 3.342e-05 },
+                "5.00 MeV": { "rp": 0.000242, "sig": 3.398e-05 },
+                "5.50 MeV": { "rp": 0.000256, "sig": 3.447e-05 },
+                "6.00 MeV": { "rp": 0.000271, "sig": 3.49e-05 },
+                "6.50 MeV": { "rp": 0.000285, "sig": 3.528e-05 },
+                "7.00 MeV": { "rp": 0.000298, "sig": 3.563e-05 },
+                "8.00 MeV": { "rp": 0.000323, "sig": 3.631e-05 },
+                "9.00 MeV": { "rp": 0.000348, "sig": 3.69e-05 },
+                "10.00 MeV": { "rp": 0.000371, "sig": 3.741e-05 }
+            },
+            'Germanium in GaAs': {
+                "10.00 keV": { "rp": 7.3e-07, "sig": 4.5e-07 },
+                "11.00 keV": { "rp": 7.8e-07, "sig": 4.8e-07 },
+                "12.00 keV": { "rp": 8.2e-07, "sig": 5e-07 },
+                "13.00 keV": { "rp": 8.7e-07, "sig": 5.3e-07 },
+                "14.00 keV": { "rp": 9.1e-07, "sig": 5.5e-07 },
+                "15.00 keV": { "rp": 9.6e-07, "sig": 5.7e-07 },
+                "16.00 keV": { "rp": 1e-06, "sig": 5.9e-07 },
+                "17.00 keV": { "rp": 1.04e-06, "sig": 6.2e-07 },
+                "18.00 keV": { "rp": 1.09e-06, "sig": 6.4e-07 },
+                "20.00 keV": { "rp": 1.17e-06, "sig": 6.8e-07 },
+                "22.50 keV": { "rp": 1.27e-06, "sig": 7.3e-07 },
+                "25.00 keV": { "rp": 1.37e-06, "sig": 7.8e-07 },
+                "27.50 keV": { "rp": 1.47e-06, "sig": 8.3e-07 },
+                "30.00 keV": { "rp": 1.57e-06, "sig": 8.8e-07 },
+                "32.50 keV": { "rp": 1.67e-06, "sig": 9.3e-07 },
+                "35.00 keV": { "rp": 1.77e-06, "sig": 9.8e-07 },
+                "37.50 keV": { "rp": 1.86e-06, "sig": 1.02e-06 },
+                "40.00 keV": { "rp": 1.96e-06, "sig": 1.07e-06 },
+                "45.00 keV": { "rp": 2.15e-06, "sig": 1.16e-06 },
+                "50.00 keV": { "rp": 2.34e-06, "sig": 1.25e-06 },
+                "55.00 keV": { "rp": 2.53e-06, "sig": 1.34e-06 },
+                "60.00 keV": { "rp": 2.72e-06, "sig": 1.42e-06 },
+                "65.00 keV": { "rp": 2.9e-06, "sig": 1.51e-06 },
+                "70.00 keV": { "rp": 3.09e-06, "sig": 1.6e-06 },
+                "80.00 keV": { "rp": 3.46e-06, "sig": 1.77e-06 },
+                "90.00 keV": { "rp": 3.83e-06, "sig": 1.94e-06 },
+                "100.00 keV": { "rp": 4.21e-06, "sig": 2.1e-06 },
+                "110.00 keV": { "rp": 4.58e-06, "sig": 2.27e-06 },
+                "120.00 keV": { "rp": 4.96e-06, "sig": 2.43e-06 },
+                "130.00 keV": { "rp": 5.33e-06, "sig": 2.6e-06 },
+                "140.00 keV": { "rp": 5.71e-06, "sig": 2.76e-06 },
+                "150.00 keV": { "rp": 6.1e-06, "sig": 2.93e-06 },
+                "160.00 keV": { "rp": 6.48e-06, "sig": 3.09e-06 },
+                "170.00 keV": { "rp": 6.87e-06, "sig": 3.26e-06 },
+                "180.00 keV": { "rp": 7.26e-06, "sig": 3.42e-06 },
+                "200.00 keV": { "rp": 8.06e-06, "sig": 3.76e-06 },
+                "225.00 keV": { "rp": 9.06e-06, "sig": 4.17e-06 },
+                "250.00 keV": { "rp": 1.007e-05, "sig": 4.57e-06 },
+                "275.00 keV": { "rp": 1.11e-05, "sig": 4.98e-06 },
+                "300.00 keV": { "rp": 1.214e-05, "sig": 5.38e-06 },
+                "325.00 keV": { "rp": 1.318e-05, "sig": 5.78e-06 },
+                "350.00 keV": { "rp": 1.424e-05, "sig": 6.17e-06 },
+                "375.00 keV": { "rp": 1.53e-05, "sig": 6.56e-06 },
+                "400.00 keV": { "rp": 1.637e-05, "sig": 6.96e-06 },
+                "450.00 keV": { "rp": 1.855e-05, "sig": 7.73e-06 },
+                "500.00 keV": { "rp": 2.076e-05, "sig": 8.5e-06 },
+                "550.00 keV": { "rp": 2.301e-05, "sig": 9.26e-06 },
+                "600.00 keV": { "rp": 2.53e-05, "sig": 1.002e-05 },
+                "650.00 keV": { "rp": 2.762e-05, "sig": 1.078e-05 },
+                "700.00 keV": { "rp": 2.997e-05, "sig": 1.153e-05 },
+                "800.00 keV": { "rp": 3.476e-05, "sig": 1.301e-05 },
+                "900.00 keV": { "rp": 3.966e-05, "sig": 1.448e-05 },
+                "1.00 MeV": { "rp": 4.466e-05, "sig": 1.592e-05 },
+                "1.10 MeV": { "rp": 4.972e-05, "sig": 1.733e-05 },
+                "1.20 MeV": { "rp": 5.484e-05, "sig": 1.871e-05 },
+                "1.30 MeV": { "rp": 5.999e-05, "sig": 2.006e-05 },
+                "1.40 MeV": { "rp": 6.517e-05, "sig": 2.138e-05 },
+                "1.50 MeV": { "rp": 7.036e-05, "sig": 2.265e-05 },
+                "1.60 MeV": { "rp": 7.554e-05, "sig": 2.389e-05 },
+                "1.70 MeV": { "rp": 8.071e-05, "sig": 2.508e-05 },
+                "1.80 MeV": { "rp": 8.585e-05, "sig": 2.624e-05 },
+                "2.00 MeV": { "rp": 9.602e-05, "sig": 2.843e-05 },
+                "2.25 MeV": { "rp": 0.000108, "sig": 3.094e-05 },
+                "2.50 MeV": { "rp": 0.000121, "sig": 3.322e-05 },
+                "2.75 MeV": { "rp": 0.000132, "sig": 3.528e-05 },
+                "3.00 MeV": { "rp": 0.000143, "sig": 3.713e-05 },
+                "3.25 MeV": { "rp": 0.000154, "sig": 3.881e-05 },
+                "3.50 MeV": { "rp": 0.000165, "sig": 4.033e-05 },
+                "3.75 MeV": { "rp": 0.000175, "sig": 4.17e-05 },
+                "4.00 MeV": { "rp": 0.000184, "sig": 4.296e-05 },
+                "4.50 MeV": { "rp": 0.000203, "sig": 4.517e-05 },
+                "5.00 MeV": { "rp": 0.00022, "sig": 4.703e-05 },
+                "5.50 MeV": { "rp": 0.000236, "sig": 4.861e-05 },
+                "6.00 MeV": { "rp": 0.000251, "sig": 4.997e-05 },
+                "6.50 MeV": { "rp": 0.000265, "sig": 5.115e-05 },
+                "7.00 MeV": { "rp": 0.000279, "sig": 5.218e-05 },
+                "8.00 MeV": { "rp": 0.000304, "sig": 5.395e-05 },
+                "9.00 MeV": { "rp": 0.000327, "sig": 5.537e-05 },
+                "10.00 MeV": { "rp": 0.000348, "sig": 5.654e-05 }
+            },
+            'Phosphorus in SiC': {
+                "10.00 keV": { "rp": 1.56e-06, "sig": 6.6e-07 },
+                "11.00 keV": { "rp": 1.68e-06, "sig": 7.1e-07 },
+                "12.00 keV": { "rp": 1.80e-06, "sig": 7.5e-07 },
+                "13.00 keV": { "rp": 1.93e-06, "sig": 7.9e-07 },
+                "14.00 keV": { "rp": 2.05e-06, "sig": 8.4e-07 },
+                "15.00 keV": { "rp": 2.17e-06, "sig": 8.8e-07 },
+                "16.00 keV": { "rp": 2.29e-06, "sig": 9.2e-07 },
+                "17.00 keV": { "rp": 2.41e-06, "sig": 9.7e-07 },
+                "18.00 keV": { "rp": 2.53e-06, "sig": 1.01e-06 },
+                "20.00 keV": { "rp": 2.77e-06, "sig": 1.09e-06 },
+                "22.50 keV": { "rp": 3.07e-06, "sig": 1.19e-06 },
+                "25.00 keV": { "rp": 3.37e-06, "sig": 1.29e-06 },
+                "27.50 keV": { "rp": 3.67e-06, "sig": 1.39e-06 },
+                "30.00 keV": { "rp": 3.96e-06, "sig": 1.48e-06 },
+                "32.50 keV": { "rp": 4.26e-06, "sig": 1.58e-06 },
+                "35.00 keV": { "rp": 4.56e-06, "sig": 1.67e-06 },
+                "37.50 keV": { "rp": 4.86e-06, "sig": 1.76e-06 },
+                "40.00 keV": { "rp": 5.16e-06, "sig": 1.85e-06 },
+                "45.00 keV": { "rp": 5.76e-06, "sig": 2.03e-06 },
+                "50.00 keV": { "rp": 6.37e-06, "sig": 2.21e-06 },
+                "55.00 keV": { "rp": 6.97e-06, "sig": 2.38e-06 },
+                "60.00 keV": { "rp": 7.58e-06, "sig": 2.55e-06 },
+                "65.00 keV": { "rp": 8.18e-06, "sig": 2.71e-06 },
+                "70.00 keV": { "rp": 8.79e-06, "sig": 2.87e-06 },
+                "80.00 keV": { "rp": 1e-05, "sig": 3.18e-06 },
+                "90.00 keV": { "rp": 1.121e-05, "sig": 3.47e-06 },
+                "100.00 keV": { "rp": 1.24e-05, "sig": 3.75e-06 },
+                "110.00 keV": { "rp": 1.359e-05, "sig": 4.02e-06 },
+                "120.00 keV": { "rp": 1.477e-05, "sig": 4.28e-06 },
+                "130.00 keV": { "rp": 1.595e-05, "sig": 4.52e-06 },
+                "140.00 keV": { "rp": 1.712e-05, "sig": 4.76e-06 },
+                "150.00 keV": { "rp": 1.828e-05, "sig": 4.99e-06 },
+                "160.00 keV": { "rp": 1.944e-05, "sig": 5.21e-06 },
+                "170.00 keV": { "rp": 2.06e-05, "sig": 5.43e-06 },
+                "180.00 keV": { "rp": 2.175e-05, "sig": 5.63e-06 },
+                "200.00 keV": { "rp": 2.405e-05, "sig": 6.04e-06 },
+                "225.00 keV": { "rp": 2.69e-05, "sig": 6.51e-06 },
+                "250.00 keV": { "rp": 2.972e-05, "sig": 6.96e-06 },
+                "275.00 keV": { "rp": 3.252e-05, "sig": 7.37e-06 },
+                "300.00 keV": { "rp": 3.53e-05, "sig": 7.77e-06 },
+                "325.00 keV": { "rp": 3.804e-05, "sig": 8.14e-06 },
+                "350.00 keV": { "rp": 4.076e-05, "sig": 8.50e-06 },
+                "375.00 keV": { "rp": 4.345e-05, "sig": 8.83e-06 },
+                "400.00 keV": { "rp": 4.61e-05, "sig": 9.15e-06 },
+                "450.00 keV": { "rp": 5.13e-05, "sig": 9.75e-06 },
+                "500.00 keV": { "rp": 5.636e-05, "sig": 1.029e-05 },
+                "550.00 keV": { "rp": 6.128e-05, "sig": 1.078e-05 },
+                "600.00 keV": { "rp": 6.605e-05, "sig": 1.122e-05 },
+                "650.00 keV": { "rp": 7.067e-05, "sig": 1.162e-05 },
+                "700.00 keV": { "rp": 7.516e-05, "sig": 1.199e-05 },
+                "800.00 keV": { "rp": 8.373e-05, "sig": 1.266e-05 },
+                "900.00 keV": { "rp": 9.181e-05, "sig": 1.323e-05 },
+                "1.00 MeV": { "rp": 9.946e-05, "sig": 1.372e-05 },
+                "1.10 MeV": { "rp": 0.000107, "sig": 1.414e-05 },
+                "1.20 MeV": { "rp": 0.000114, "sig": 1.451e-05 },
+                "1.30 MeV": { "rp": 0.00012, "sig": 1.484e-05 },
+                "1.40 MeV": { "rp": 0.000127, "sig": 1.514e-05 },
+                "1.50 MeV": { "rp": 0.000133, "sig": 1.54e-05 },
+                "1.60 MeV": { "rp": 0.000139, "sig": 1.564e-05 },
+                "1.70 MeV": { "rp": 0.000144, "sig": 1.586e-05 },
+                "1.80 MeV": { "rp": 0.00015, "sig": 1.606e-05 },
+                "2.00 MeV": { "rp": 0.000161, "sig": 1.645e-05 },
+                "2.25 MeV": { "rp": 0.000173, "sig": 1.689e-05 },
+                "2.50 MeV": { "rp": 0.000185, "sig": 1.727e-05 },
+                "2.75 MeV": { "rp": 0.000197, "sig": 1.759e-05 },
+                "3.00 MeV": { "rp": 0.000208, "sig": 1.788e-05 },
+                "3.25 MeV": { "rp": 0.000219, "sig": 1.815e-05 },
+                "3.50 MeV": { "rp": 0.000229, "sig": 1.838e-05 },
+                "3.75 MeV": { "rp": 0.000239, "sig": 1.860e-05 },
+                "4.00 MeV": { "rp": 0.000249, "sig": 1.880e-05 },
+                "4.50 MeV": { "rp": 0.000268, "sig": 1.926e-05 },
+                "5.00 MeV": { "rp": 0.000287, "sig": 1.966e-05 },
+                "5.50 MeV": { "rp": 0.000305, "sig": 2.002e-05 },
+                "6.00 MeV": { "rp": 0.000322, "sig": 2.035e-05 },
+                "6.50 MeV": { "rp": 0.000339, "sig": 2.066e-05 },
+                "7.00 MeV": { "rp": 0.000356, "sig": 2.094e-05 },
+                "8.00 MeV": { "rp": 0.000388, "sig": 2.169e-05 },
+                "9.00 MeV": { "rp": 0.000419, "sig": 2.236e-05 },
+                "10.00 MeV": { "rp": 0.00045, "sig": 2.297e-05 },
+            },
+            'Boron in SiC': {
+                "10.00 keV": { "rp": 3.67e-06, "sig": 1.81e-06 },
+                "11.00 keV": { "rp": 4.01e-06, "sig": 1.94e-06 },
+                "12.00 keV": { "rp": 4.35e-06, "sig": 2.06e-06 },
+                "13.00 keV": { "rp": 4.69e-06, "sig": 2.18e-06 },
+                "14.00 keV": { "rp": 5.03e-06, "sig": 2.3e-06 },
+                "15.00 keV": { "rp": 5.36e-06, "sig": 2.42e-06 },
+                "16.00 keV": { "rp": 5.70e-06, "sig": 2.53e-06 },
+                "17.00 keV": { "rp": 6.03e-06, "sig": 2.63e-06 },
+                "18.00 keV": { "rp": 6.37e-06, "sig": 2.74e-06 },
+                "20.00 keV": { "rp": 7.03e-06, "sig": 2.94e-06 },
+                "22.50 keV": { "rp": 7.84e-06, "sig": 3.17e-06 },
+                "25.00 keV": { "rp": 8.65e-06, "sig": 3.39e-06 },
+                "27.50 keV": { "rp": 9.44e-06, "sig": 3.60e-06 },
+                "30.00 keV": { "rp": 1.021e-05, "sig": 3.79e-06 },
+                "32.50 keV": { "rp": 1.096e-05, "sig": 3.97e-06 },
+                "35.00 keV": { "rp": 1.17e-05, "sig": 4.13e-06 },
+                "37.50 keV": { "rp": 1.243e-05, "sig": 4.29e-06 },
+                "40.00 keV": { "rp": 1.314e-05, "sig": 4.44e-06 },
+                "45.00 keV": { "rp": 1.454e-05, "sig": 4.71e-06 },
+                "50.00 keV": { "rp": 1.591e-05, "sig": 4.96e-06 },
+                "55.00 keV": { "rp": 1.724e-05, "sig": 5.19e-06 },
+                "60.00 keV": { "rp": 1.856e-05, "sig": 5.41e-06 },
+                "65.00 keV": { "rp": 1.985e-05, "sig": 5.61e-06 },
+                "70.00 keV": { "rp": 2.113e-05, "sig": 5.80e-06 },
+                "80.00 keV": { "rp": 2.365e-05, "sig": 6.15e-06 },
+                "90.00 keV": { "rp": 2.613e-05, "sig": 6.47e-06 },
+                "100.00 keV": { "rp": 2.858e-05, "sig": 6.77e-06 },
+                "1.00 MeV": { "rp": 1.325e-05, "sig": 1.695e-05 },
+                "1.10 MeV": { "rp": 1.349e-05, "sig": 1.737e-05 },
+                "1.20 MeV": { "rp": 1.371e-05, "sig": 1.774e-05 },
+                "1.30 MeV": { "rp": 1.391e-05, "sig": 1.809e-05 },
+                "1.40 MeV": { "rp": 1.409e-05, "sig": 1.841e-05 },
+                "1.50 MeV": { "rp": 1.427e-05, "sig": 1.872e-05 },
+                "1.60 MeV": { "rp": 1.444e-05, "sig": 1.901e-05 },
+                "1.70 MeV": { "rp": 1.460e-05, "sig": 1.928e-05 },
+                "1.80 MeV": { "rp": 1.475e-05, "sig": 1.954e-05 },
+                "2.00 MeV": { "rp": 1.516e-05, "sig": 2.004e-05 },
+                "2.25 MeV": { "rp": 1.571e-05, "sig": 2.062e-05 },
+                "2.50 MeV": { "rp": 1.623e-05, "sig": 2.116e-05 },
+                "2.75 MeV": { "rp": 1.672e-05, "sig": 2.167e-05 },
+                "3.00 MeV": { "rp": 1.720e-05, "sig": 2.215e-05 },
+                "3.25 MeV": { "rp": 1.766e-05, "sig": 2.262e-05 },
+                "3.50 MeV": { "rp": 1.811e-05, "sig": 2.308e-05 },
+                "3.75 MeV": { "rp": 1.856e-05, "sig": 2.352e-05 },
+                "4.00 MeV": { "rp": 1.899e-05, "sig": 2.395e-05 },
+                "4.50 MeV": { "rp": 2.041e-05, "sig": 2.480e-05 },
+                "5.00 MeV": { "rp": 2.177e-05, "sig": 2.562e-05 },
+                "5.50 MeV": { "rp": 2.308e-05, "sig": 2.642e-05 },
+                "6.00 MeV": { "rp": 2.436e-05, "sig": 2.721e-05 },
+                "6.50 MeV": { "rp": 2.560e-05, "sig": 2.799e-05 },
+                "7.00 MeV": { "rp": 2.682e-05, "sig": 2.877e-05 },
+                "8.00 MeV": { "rp": 3.103e-05, "sig": 3.031e-05 },
+                "9.00 MeV": { "rp": 3.495e-05, "sig": 3.185e-05 },
+                "10.00 MeV": { "rp": 3.865e-05, "sig": 3.339e-05 },
+            },
+            'Arsenic in SiC': {
+                "10.00 keV": { "rp": 1.26e-06, "sig": 4.8e-07 },
+                "11.00 keV": { "rp": 1.38e-06, "sig": 5.2e-07 },
+                "12.00 keV": { "rp": 1.5e-06, "sig": 5.6e-07 },
+                "13.00 keV": { "rp": 1.63e-06, "sig": 6.1e-07 },
+                "14.00 keV": { "rp": 1.75e-06, "sig": 6.5e-07 },
+                "15.00 keV": { "rp": 1.87e-06, "sig": 7.0e-07 },
+                "16.00 keV": { "rp": 1.99e-06, "sig": 7.4e-07 },
+                "17.00 keV": { "rp": 2.11e-06, "sig": 7.8e-07 },
+                "18.00 keV": { "rp": 2.23e-06, "sig": 8.3e-07 },
+                "20.00 keV": { "rp": 2.47e-06, "sig": 9.1e-07 },
+                "22.50 keV": { "rp": 2.78e-06, "sig": 1.01e-06 },
+                "25.00 keV": { "rp": 3.08e-06, "sig": 1.11e-06 },
+                "27.50 keV": { "rp": 3.38e-06, "sig": 1.21e-06 },
+                "30.00 keV": { "rp": 3.67e-06, "sig": 1.31e-06 },
+                "32.50 keV": { "rp": 3.97e-06, "sig": 1.41e-06 },
+                "35.00 keV": { "rp": 4.26e-06, "sig": 1.51e-06 },
+                "37.50 keV": { "rp": 4.55e-06, "sig": 1.6e-06 },
+                "40.00 keV": { "rp": 4.84e-06, "sig": 1.7e-06 },
+                "45.00 keV": { "rp": 5.42e-06, "sig": 1.89e-06 },
+                "50.00 keV": { "rp": 6.0e-06, "sig": 2.07e-06 },
+                "55.00 keV": { "rp": 6.57e-06, "sig": 2.24e-06 },
+                "60.00 keV": { "rp": 7.14e-06, "sig": 2.41e-06 },
+                "65.00 keV": { "rp": 7.71e-06, "sig": 2.58e-06 },
+                "70.00 keV": { "rp": 8.27e-06, "sig": 2.74e-06 },
+                "80.00 keV": { "rp": 9.38e-06, "sig": 3.04e-06 },
+                "90.00 keV": { "rp": 1.047e-05, "sig": 3.31e-06 },
+                "100.00 keV": { "rp": 1.155e-05, "sig": 3.57e-06 },
+                "1.00 MeV": { "rp": 1.221e-04, "sig": 1.661e-05 },
+                "1.10 MeV": { "rp": 1.308e-04, "sig": 1.715e-05 },
+                "1.20 MeV": { "rp": 1.391e-04, "sig": 1.765e-05 },
+                "1.30 MeV": { "rp": 1.47e-04, "sig": 1.812e-05 },
+                "1.40 MeV": { "rp": 1.545e-04, "sig": 1.856e-05 },
+                "1.50 MeV": { "rp": 1.618e-04, "sig": 1.897e-05 },
+                "1.60 MeV": { "rp": 1.688e-04, "sig": 1.935e-05 },
+                "1.70 MeV": { "rp": 1.756e-04, "sig": 1.971e-05 },
+                "1.80 MeV": { "rp": 1.822e-04, "sig": 2.005e-05 },
+                "2.00 MeV": { "rp": 1.947e-04, "sig": 2.067e-05 },
+                "2.25 MeV": { "rp": 2.099e-04, "sig": 2.133e-05 },
+                "2.50 MeV": { "rp": 2.247e-04, "sig": 2.195e-05 },
+                "2.75 MeV": { "rp": 2.393e-04, "sig": 2.254e-05 },
+                "3.00 MeV": { "rp": 2.535e-04, "sig": 2.31e-05 },
+                "3.25 MeV": { "rp": 2.676e-04, "sig": 2.364e-05 },
+                "3.50 MeV": { "rp": 2.813e-04, "sig": 2.416e-05 },
+                "3.75 MeV": { "rp": 2.949e-04, "sig": 2.466e-05 },
+                "4.00 MeV": { "rp": 3.083e-04, "sig": 2.515e-05 },
+                "4.50 MeV": { "rp": 3.345e-04, "sig": 2.606e-05 },
+                "5.00 MeV": { "rp": 3.601e-04, "sig": 2.692e-05 },
+                "5.50 MeV": { "rp": 3.852e-04, "sig": 2.774e-05 },
+                "6.00 MeV": { "rp": 4.097e-04, "sig": 2.853e-05 },
+                "6.50 MeV": { "rp": 4.338e-04, "sig": 2.928e-05 },
+                "7.00 MeV": { "rp": 4.575e-04, "sig": 3.001e-05 },
+                "8.00 MeV": { "rp": 5.038e-04, "sig": 3.137e-05 },
+                "9.00 MeV": { "rp": 5.486e-04, "sig": 3.261e-05 },
+                "10.00 MeV": { "rp": 5.921e-04, "sig": 3.376e-05 }
+            },
+            'Gallium in Nitrogen': {
+                "10.00 keV": { "rp": 2.4e-06, "sig": 6.5e-07 },
+                "11.00 keV": { "rp": 2.56e-06, "sig": 6.8e-07 },
+                "12.00 keV": { "rp": 2.71e-06, "sig": 7.1e-07 },
+                "13.00 keV": { "rp": 2.86e-06, "sig": 7.5e-07 },
+                "14.00 keV": { "rp": 3.01e-06, "sig": 7.8e-07 },
+                "15.00 keV": { "rp": 3.15e-06, "sig": 8.1e-07 },
+                "16.00 keV": { "rp": 3.3e-06, "sig": 8.4e-07 },
+                "17.00 keV": { "rp": 3.44e-06, "sig": 8.7e-07 },
+                "18.00 keV": { "rp": 3.58e-06, "sig": 9.0e-07 },
+                "20.00 keV": { "rp": 3.86e-06, "sig": 9.6e-07 },
+                "22.50 keV": { "rp": 4.21e-06, "sig": 1.04e-06 },
+                "25.00 keV": { "rp": 4.55e-06, "sig": 1.11e-06 },
+                "27.50 keV": { "rp": 4.88e-06, "sig": 1.18e-06 },
+                "30.00 keV": { "rp": 5.22e-06, "sig": 1.25e-06 },
+                "32.50 keV": { "rp": 5.55e-06, "sig": 1.31e-06 },
+                "35.00 keV": { "rp": 5.88e-06, "sig": 1.38e-06 },
+                "37.50 keV": { "rp": 6.21e-06, "sig": 1.44e-06 },
+                "40.00 keV": { "rp": 6.53e-06, "sig": 1.51e-06 },
+                "45.00 keV": { "rp": 7.18e-06, "sig": 1.64e-06 },
+                "50.00 keV": { "rp": 7.83e-06, "sig": 1.76e-06 },
+                "55.00 keV": { "rp": 8.47e-06, "sig": 1.89e-06 },
+                "60.00 keV": { "rp": 9.11e-06, "sig": 2.01e-06 },
+                "65.00 keV": { "rp": 9.76e-06, "sig": 2.13e-06 },
+                "70.00 keV": { "rp": 1.04e-05, "sig": 2.26e-06 },
+                "80.00 keV": { "rp": 1.169e-05, "sig": 2.5e-06 },
+                "90.00 keV": { "rp": 1.298e-05, "sig": 2.73e-06 },
+                "100.00 keV": { "rp": 1.428e-05, "sig": 2.97e-06 },
+                "110.00 keV": { "rp": 1.559e-05, "sig": 3.2e-06 },
+                "120.00 keV": { "rp": 1.691e-05, "sig": 3.43e-06 },
+                "130.00 keV": { "rp": 1.824e-05, "sig": 3.66e-06 },
+                "140.00 keV": { "rp": 1.957e-05, "sig": 3.89e-06 },
+                "150.00 keV": { "rp": 2.091e-05, "sig": 4.12e-06 },
+                "160.00 keV": { "rp": 2.225e-05, "sig": 4.34e-06 },
+                "170.00 keV": { "rp": 2.36e-05, "sig": 4.56e-06 },
+                "180.00 keV": { "rp": 2.496e-05, "sig": 4.78e-06 },
+                "200.00 keV": { "rp": 2.77e-05, "sig": 5.22e-06 },
+                "225.00 keV": { "rp": 3.117e-05, "sig": 5.77e-06 },
+                "250.00 keV": { "rp": 3.47e-05, "sig": 6.31e-06 },
+                "275.00 keV": { "rp": 3.827e-05, "sig": 6.84e-06 },
+                "300.00 keV": { "rp": 4.188e-05, "sig": 7.37e-06 },
+                "325.00 keV": { "rp": 4.553e-05, "sig": 7.89e-06 },
+                "350.00 keV": { "rp": 4.92e-05, "sig": 8.4e-06 },
+                "375.00 keV": { "rp": 5.289e-05, "sig": 8.9e-06 },
+                "400.00 keV": { "rp": 5.659e-05, "sig": 9.39e-06 },
+                "450.00 keV": { "rp": 6.404e-05, "sig": 1.037e-05 },
+                "500.00 keV": { "rp": 7.151e-05, "sig": 1.131e-05 },
+                "550.00 keV": { "rp": 7.899e-05, "sig": 1.221e-05 },
+                "600.00 keV": { "rp": 8.647e-05, "sig": 1.308e-05 },
+                "650.00 keV": { "rp": 9.394e-05, "sig": 1.391e-05 },
+                "700.00 keV": { "rp": 1.01e-04, "sig": 1.472e-05 },
+                "800.00 keV": { "rp": 1.16e-04, "sig": 1.63e-05 },
+                "900.00 keV": { "rp": 1.31e-04, "sig": 1.778e-05 },
+                "1.00 MeV": { "rp": 1.46e-04, "sig": 1.917e-05 },
+                "1.10 MeV": { "rp": 1.6e-04, "sig": 2.048e-05 },
+                "1.20 MeV": { "rp": 1.75e-04, "sig": 2.172e-05 },
+                "1.30 MeV": { "rp": 1.9e-04, "sig": 2.291e-05 },
+                "1.40 MeV": { "rp": 2.04e-04, "sig": 2.403e-05 },
+                "1.50 MeV": { "rp": 2.18e-04, "sig": 2.511e-05 },
+                "1.60 MeV": { "rp": 2.33e-04, "sig": 2.614e-05 },
+                "1.70 MeV": { "rp": 2.47e-04, "sig": 2.713e-05 },
+                "1.80 MeV": { "rp": 2.61e-04, "sig": 2.807e-05 },
+                "2.00 MeV": { "rp": 2.89e-04, "sig": 2.998e-05 },
+                "2.25 MeV": { "rp": 3.23e-04, "sig": 3.221e-05 },
+                "2.50 MeV": { "rp": 3.56e-04, "sig": 3.423e-05 },
+                "2.75 MeV": { "rp": 3.89e-04, "sig": 3.605e-05 },
+                "3.00 MeV": { "rp": 4.2e-04, "sig": 3.77e-05 },
+                "3.25 MeV": { "rp": 4.51e-04, "sig": 3.921e-05 },
+                "3.50 MeV": { "rp": 4.8e-04, "sig": 4.057e-05 },
+                "3.75 MeV": { "rp": 5.09e-04, "sig": 4.182e-05 },
+                "4.00 MeV": { "rp": 5.36e-04, "sig": 4.295e-05 },
+                "4.50 MeV": { "rp": 5.89e-04, "sig": 4.523e-05 },
+                "5.00 MeV": { "rp": 6.38e-04, "sig": 4.714e-05 },
+                "5.50 MeV": { "rp": 6.83e-04, "sig": 4.874e-05 },
+                "6.00 MeV": { "rp": 7.26e-04, "sig": 5.011e-05 },
+                "6.50 MeV": { "rp": 7.66e-04, "sig": 5.128e-05 },
+                "7.00 MeV": { "rp": 8.03e-04, "sig": 5.229e-05 },
+                "8.00 MeV": { "rp": 8.72e-04, "sig": 5.438e-05 },
+                "9.00 MeV": { "rp": 9.34e-04, "sig": 5.6e-05 },
+                "10.00 MeV": { "rp": 9.9e-04, "sig": 5.729e-05 }
+            }
+
+
+        };
+
+        // Constants
+        const k_boltzmann = 8.617e-5;  // eV/K
+        const D0 = 10.5;  // cm²/s
+        const Ea_Arsenic = 4.05;  // eV
+        const Ea_Phosphorus = 3.66;  // eV
+
+        let cmChart = null;
+
+        function calculateDiffusionCoeff(T_celsius, metal_type) {
+            const T_kelvin = T_celsius + 273.15;
+            let Ea;
+            if (metal_type === 'Arsenic') {
+                Ea = Ea_Arsenic;
+            } else if (metal_type === 'Phosphorus') {
+                Ea = Ea_Phosphorus;
+            } else {
+                Ea = Ea_Arsenic; // Default
+            }
+
+            const kT = k_boltzmann * T_kelvin;
+            const D = D0 * Math.exp(-Ea / kT);
+            return D;
+        }
+
+        function getSemiconductorType(metalType, temperature) {
+    // Check if it's a Gallium Arsenide material
+    if (metalType.includes('GaAs') || metalType.includes('Gallium')) {
+        if (temperature >= 550) {
+            return { type: 'n-type', class: 'bg-primary' };
+        } else {
+            return { type: 'p-type', class: 'bg-success' };
+        }
+    }
+    return null; // Not applicable for other materials
+}
+
+        // Update ion energy dropdown based on selected metal
+        function updateIonEnergyDropdown() {
+            const metal = document.getElementById('metal-select').value;
+            const energy = document.getElementById('energy-select');
+            energy.innerHTML = '';
+            Object.keys(metalIonData[metal]).forEach(e => {
+                const option = document.createElement('option');
+                option.value = e;
+                option.textContent = e;
+                energy.appendChild(option);
+            });
+        }
+
+        function generateXValues(rp, sig, sig_t) {
+            const x_min = Math.max(0, rp - 5 * sig);
+            const x_max = rp + 5 * Math.max(sig, sig_t);
+            const x_vals = [];
+            for (let i = 0; i <= 1000; i++) {
+                x_vals.push(x_min + (x_max - x_min) * i / 1000);
+            }
+            return x_vals;
+        }
+
+        function calculateResults() {
+            const metal_type = document.getElementById('metal-select').value;
+            const ion_energy = document.getElementById('energy-select').value;
+            const nb = parseFloat(document.getElementById('nb').value);
+            const q = parseFloat(document.getElementById('q').value);
+            const tox = parseFloat(document.getElementById('tox').value);
+            const anneal_temp_c = parseFloat(document.getElementById('anneal_temp_c').value);
+            const anneal_time_s = parseFloat(document.getElementById('anneal_time_s').value);
+
+            // Get ion data
+            const ionData = metalIonData[metal_type][ion_energy];
+            const rp = ionData.rp;
+            const sig = ionData.sig;
+
+            // Calculate diffusion coefficient
+            const D = calculateDiffusionCoeff(anneal_temp_c, metal_type);
+
+            // Calculate sigma after diffusion
+            const sig_t = Math.sqrt(sig ** 2 + 2 * D * anneal_time_s);
+
+            // Generate x values
+            const x_vals = generateXValues(rp, sig, sig_t);
+
+            // Calculate static distribution
+            const np = q / (sig * Math.sqrt(2 * Math.PI));
+            const N_static = x_vals.map(x => {
+                const val = np * Math.exp(-((x - rp) ** 2) / (2 * sig ** 2)) - nb;
+                return Math.max(val, 0);
+            });
+
+            // Calculate diffused distribution
+            const np_t = q / (sig_t * Math.sqrt(2 * Math.PI));
+            const N_diff = x_vals.map(x => {
+                const val = np_t * Math.exp(-((x - rp) ** 2) / (2 * sig_t ** 2)) - nb;
+                return Math.max(val, 0);
+            });
+
+            // Calculate concentrations at oxide thickness
+            const N_x_tox_static = Math.max(np * Math.exp(-((tox - rp) ** 2) / (2 * sig ** 2)) - nb, 0);
+            const N_x_tox_diff = Math.max(np_t * Math.exp(-((tox - rp) ** 2) / (2 * sig_t ** 2)) - nb, 0);
+
+            // Calculate junction depths
+            const xj_static = np > nb ? rp + sig * Math.sqrt(2 * Math.log(np / nb)) : 0;
+            const xj_eff_static = xj_static > tox ? xj_static - tox : 0;
+            const xj_diff = np_t > nb ? rp + sig_t * Math.sqrt(2 * Math.log(np_t / nb)) : 0;
+            const xj_eff_diff = xj_diff > tox ? xj_diff - tox : 0;
+
+            // Show results
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // Fill in parameters
+            document.getElementById('metalType').textContent = metal_type;
+            document.getElementById('ionEnergy').textContent = ion_energy;
+            document.getElementById('ionRP').textContent = rp.toExponential(4);
+            document.getElementById('ionSig').textContent = sig.toExponential(4);
+            const deltaXj = (xj_diff && xj_static) ? (xj_diff - xj_static) : 0;
+            const rpPrime = rp + deltaXj / 2;
+            const deltaRp = rpPrime - rp;
+
+            document.getElementById('rpPrime').textContent = rpPrime.toExponential(4);
+            document.getElementById('deltaRp').textContent = deltaRp.toExponential(4);
+
+
+            document.getElementById('annealTime').textContent = anneal_time_s;
+            document.getElementById('annealTimeMin').textContent = (anneal_time_s / 60).toFixed(2);
+            document.getElementById('annealTemp').textContent = anneal_temp_c;
+            document.getElementById('diffCoeff').textContent = D.toExponential(4);
+            document.getElementById('sigAfterDiff').textContent = sig_t.toExponential(4);
+
+            document.getElementById('toxValue').textContent = tox.toExponential(4);
+            document.getElementById('nxToxStatic').textContent = N_x_tox_static.toExponential(4);
+            document.getElementById('nxToxDiff').textContent = N_x_tox_diff.toExponential(4);
+
+            if (N_x_tox_static > 0) {
+                const percentChange = ((N_x_tox_diff - N_x_tox_static) / N_x_tox_static * 100).toFixed(2);
+                document.getElementById('concChange').textContent = percentChange;
+            } else {
+                document.getElementById('concChange').textContent = 'N/A';
+            }
+
+            document.getElementById('xjStatic').textContent = xj_static ? xj_static.toExponential(4) : 'N/A';
+            document.getElementById('xjEffStatic').textContent = xj_eff_static ? xj_eff_static.toExponential(4) : 'N/A';
+            document.getElementById('xjDiff').textContent = xj_diff ? xj_diff.toExponential(4) : 'N/A';
+            document.getElementById('xjEffDiff').textContent = xj_eff_diff ? xj_eff_diff.toExponential(4) : 'N/A';
+
+
+            const semiconductorInfo = getSemiconductorType(metal_type, anneal_temp_c);
+            const semiconductorCard = document.getElementById('semiconductorTypeCard');
+
+            if (semiconductorInfo) {
+                // Show the semiconductor type card
+                semiconductorCard.style.display = 'block';
+                
+                // Update the semiconductor type display
+                const typeElement = document.getElementById('semiconductorType');
+                typeElement.textContent = semiconductorInfo.type;
+                typeElement.className = `badge ${semiconductorInfo.class}`;
+            } else {
+                // Hide the card for non-GaAs materials
+                semiconductorCard.style.display = 'none';
+            }
+
+            // Create chart data
+            const dataStatic = x_vals.map((x, i) => ({ x, y: N_static[i] }));
+            const dataDiff = x_vals.map((x, i) => ({ x, y: N_diff[i] }));
+
+            // Filter out zero values for logarithmic scale
+            const dataStaticFiltered = dataStatic.filter(point => point.y > 0);
+            const dataDiffFiltered = dataDiff.filter(point => point.y > 0);
+
+            const annealTimeMinutes = (anneal_time_s / 60).toFixed(1);
+
+            // Destroy existing chart if it exists
+            if (cmChart) {
+                cmChart.destroy();
+            }
+
+            // Create single chart with linear x-axis and logarithmic y-axis
+            cmChart = new Chart(
+                document.getElementById('cmChart').getContext('2d'),
+                {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {
+                                label: 'As-implanted',
+                                data: dataStaticFiltered,
+                                borderColor: 'blue',
+                                pointRadius: 0,
+                                borderWidth: 2
+                            },
+                            {
+                                label: `After ${annealTimeMinutes} minutes @ ${anneal_temp_c}°C`,
+                                data: dataDiffFiltered,
+                                borderColor: 'orange',
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Oxide Boundary',
+                                data: [
+                                    { x: tox, y: Math.min(...N_static.filter(n => n > 0)) },
+                                    { x: tox, y: Math.max(...N_static) * 10 }
+                                ],
+                                borderColor: 'red',
+                                pointRadius: 0,
+                                borderWidth: 2,
+                                borderDash: [2, 2]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                title: { display: true, text: 'x (cm)' }
+                            },
+                            y: {
+                                type: 'logarithmic',
+                                title: { display: true, text: 'N(x) (cm⁻³)' },
+                                ticks: {
+                                    callback: function (value) {
+                                        return '10^' + Math.log10(value).toFixed(0);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        return `N(x): ${ctx.parsed.y.toExponential(2)} cm⁻³`;
+                                    },
+                                    title: function (ctx) {
+                                        return `x (cm): ${ctx[0].parsed.x.toExponential(2)}`;
+                                    }
+                                }
+                            },
+                            zoom: {
+                                zoom: {
+                                    wheel: { enabled: true, speed: 0.1 },
+                                    pinch: { enabled: true },
+                                    mode: 'xy',
+                                    sensitivity: 3
+                                },
+                                pan: { enabled: true, mode: 'xy' },
+                                limits: {
+                                    y: { min: 'original', max: 'original' }
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            updateIonEnergyDropdown();
+            document.getElementById('metal-select').onchange = updateIonEnergyDropdown;
+
+            // Zoom controls
+            document.getElementById('resetZoomCm').onclick = function () {
+                if (cmChart) cmChart.resetZoom();
+            };
+            document.getElementById('zoomInCm').onclick = function () {
+                if (cmChart) cmChart.zoom(1.2);
+            };
+            document.getElementById('zoomOutCm').onclick = function () {
+                if (cmChart) cmChart.zoom(0.8);
+            };
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
