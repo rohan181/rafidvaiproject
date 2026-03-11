@@ -10,66 +10,19 @@
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.js"></script>
     <style>
-        body {
-            padding: 2rem 0;
-            background-color: #f8f9fa;
-        }
-        .card {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-        .card-header {
-            background-color: #343a40;
-            color: #fff;
-            font-weight: bold;
-        }
-        .btn-primary {
-            background-color: #343a40;
-            border-color: #343a40;
-        }
-        .btn-primary:hover {
-            background-color: #212529;
-            border-color: #212529;
-        }
-        .chart-container {
-            position: relative;
-            height: 400px;
-            width: 100%;
-        }
-        .zoom-buttons {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .results-section {
-            display: none;
-        }
-        .diffusion-section {
-            border-left: 4px solid #ff9800;
-            padding-left: 10px;
-            margin-top: 10px;
-        }
-        .alert-info {
-            border-left: 4px solid #0dcaf0;
-        }
-        #junctionDiff1, #junctionDiff2 {
-            font-size: 1.1em;
-            padding: 2px 6px;
-            background-color: #e7f3ff;
-            border-radius: 3px;
-        }
-        /* Comparison legend */
-        .comp-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px 18px;
-            padding: 8px 4px 2px;
-            font-size: 0.82em;
-        }
-        .comp-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        body { padding: 2rem 0; background-color: #f8f9fa; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .card-header { background-color: #343a40; color: #fff; font-weight: bold; }
+        .btn-primary { background-color: #343a40; border-color: #343a40; }
+        .btn-primary:hover { background-color: #212529; border-color: #212529; }
+        .chart-container { position: relative; height: 400px; width: 100%; }
+        .zoom-buttons { text-align: center; margin-bottom: 10px; }
+        .results-section { display: none; }
+        .diffusion-section { border-left: 4px solid #ff9800; padding-left: 10px; margin-top: 10px; }
+        .alert-info { border-left: 4px solid #0dcaf0; }
+        #junctionDiff1, #junctionDiff2 { font-size: 1.1em; padding: 2px 6px; background-color: #e7f3ff; border-radius: 3px; }
+        .comp-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 8px 4px 2px; font-size: 0.82em; }
+        .comp-legend-item { display: flex; align-items: center; gap: 6px; }
     </style>
 </head>
 
@@ -78,21 +31,19 @@
         <h2 class="text-center mb-4">Ion Implanted Impurity Profile Optimization</h2>
         <div class="row">
 
-            <!-- ═══════════ Input Form ═══════════ -->
+            <!-- Input Form -->
             <div class="col-md-4">
                 <div class="card">
-                    <div class="card-header text-center">
-                        <h4>Input Parameters</h4>
-                    </div>
+                    <div class="card-header text-center"><h4>Input Parameters</h4></div>
                     <div class="card-body">
                         <form method="post">
-                            <!-- Metal Type -->
                             <div class="mb-3">
                                 <label for="metal-select" class="form-label">Implant Ion Species</label>
                                 <select class="form-select" id="metal-select" name="metal_type">
                                     <option value="Arsenic">Arsenic In Silicon</option>
                                     <option value="Phosphorus">Phosphorus In Silicon</option>
                                     <option value="Boron">Boron In Silicon</option>
+                                    <option value="Gallium in Silicon">Gallium In Silicon</option>
                                     <option value="Silicon in GaAs">Silicon In Gallium Arsenide</option>
                                     <option value="Germanium in GaAs">Germanium in Gallium Arsenide</option>
                                     <option value="Phosphorus in SiC">Phosphorus in SiC</option>
@@ -100,27 +51,30 @@
                                     <option value="Gallium in Nitrogen">Gallium in Nitrogen (GaN)</option>
                                 </select>
                             </div>
-                            <!-- Ion Energy -->
                             <div class="mb-3">
-                                <label for="energy-select" class="form-label">Ion Energy</label>
-                                <select class="form-select" id="energy-select" name="ion_energy"></select>
+                                <label class="form-label fw-semibold">Ion Energy Range</label>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="text-muted" style="font-size:0.8em;min-width:36px;">Lower</span>
+                                    <select class="form-select form-select-sm" id="energy-lower" name="ion_energy_lower"></select>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted" style="font-size:0.8em;min-width:36px;">Upper</span>
+                                    <select class="form-select form-select-sm" id="energy-upper" name="ion_energy_upper"></select>
+                                </div>
+                                <small class="form-text text-muted">Profiles for both bounds are plotted.</small>
                             </div>
-                            <!-- Substrate Concentration -->
                             <div class="mb-3">
-                                <label for="nb" class="form-label">Substrate Concentration (cm⁻³)</label>
+                                <label for="nb" class="form-label">Substrate Concentration (cm&#x207B;&#xB3;)</label>
                                 <input type="number" class="form-control" id="nb" name="nb" value="1e15" step="any">
                             </div>
-                            <!-- Ion Dose -->
                             <div class="mb-3">
-                                <label for="q" class="form-label">Ion Dose Charge (cm⁻²)</label>
+                                <label for="q" class="form-label">Ion Dose Charge (cm&#x207B;&#xB2;)</label>
                                 <input type="number" class="form-control" id="q" name="q" value="1e12" step="any">
                             </div>
-                            <!-- Oxide Thickness -->
                             <div class="mb-3">
                                 <label for="tox" class="form-label">Oxide Thickness (cm)</label>
                                 <input type="number" class="form-control" id="tox" name="tox" value="0.5e-5" step="any">
                             </div>
-                            <!-- Diffusion Parameters -->
                             <div class="card mb-3">
                                 <div class="card-header bg-warning text-dark">Diffusion Parameters After Annealing</div>
                                 <div class="card-body">
@@ -130,9 +84,9 @@
                                         <small class="form-text text-muted">Range: 1 to 7200 seconds (2 hours)</small>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="anneal_temp_c" class="form-label">Anneal Temperature (°C)</label>
+                                        <label for="anneal_temp_c" class="form-label">Anneal Temperature (&#xB0;C)</label>
                                         <input type="number" class="form-control" id="anneal_temp_c" value="1000" min="700" max="1200" step="50">
-                                        <small class="form-text text-muted">Range: 700°C to 1200°C</small>
+                                        <small class="form-text text-muted">Range: 700&#xB0;C to 1200&#xB0;C</small>
                                     </div>
                                 </div>
                             </div>
@@ -144,52 +98,51 @@
                 </div>
             </div>
 
-            <!-- ═══════════ Results ═══════════ -->
+            <!-- Results -->
             <div class="col-md-8 results-section" id="resultsSection">
-
-                <!-- Selected Parameters -->
                 <div class="card mb-4">
-                    <div class="card-header">
-                        <span>Selected Parameters Without Annealing</span>
-                        <span style="margin-left: 60px;">Selected Parameters With Annealing</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Ion Species:</strong> <span id="metalType"></span></p>
-                                <p><strong>Ion Energy:</strong> <span id="ionEnergy"></span></p>
-                                <p><strong>Rp:</strong> <span id="ionRP"></span> cm</p>
-                                <p><strong>σ₀:</strong> <span id="ionSig"></span> cm</p>
-                            </div>
-                            <div class="col-md-6 diffusion-section">
-                                <p><strong>Anneal Time:</strong> <span id="annealTime"></span> seconds (<span id="annealTimeMin"></span> minutes)</p>
-                                <p><strong>Anneal Temperature:</strong> <span id="annealTemp"></span> °C</p>
-                                <p><strong>Diffusion Coefficient (D):</strong> <span id="diffCoeff"></span> cm²/s</p>
-                                <p><strong>σ after diffusion:</strong> <span id="sigAfterDiff"></span> cm</p>
-                                <p><strong>Rp′ (Annealing Ion Range):</strong> <span id="rpPrime"></span> cm</p>
-                                <p><strong>ΔRp = Rp′ − Rp:</strong> <span id="deltaRp"></span> cm</p>
-                            </div>
+                    <div class="card-header">Energy Range Parameters</div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0" style="font-size:0.85em;">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th class="text-center" style="color:#4fc3f7;">Lower Energy</th>
+                                        <th class="text-center" style="color:#ff8f00;">Upper Energy</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>Ion Species</strong></td><td colspan="2" class="text-center"><span id="metalType"></span></td></tr>
+                                    <tr><td><strong>Ion Energy</strong></td><td id="ionEnergyLow" class="text-center"></td><td id="ionEnergyHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>Rp (cm)</strong></td><td id="ionRPLow" class="text-center"></td><td id="ionRPHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>&#x3C3;&#x2080; (cm)</strong></td><td id="ionSigLow" class="text-center"></td><td id="ionSigHigh" class="text-center"></td></tr>
+                                    <tr class="table-warning"><td colspan="3" class="text-center fw-bold">After Annealing — <span id="annealTime"></span>s (<span id="annealTimeMin"></span> min) @ <span id="annealTemp"></span>&#xB0;C</td></tr>
+                                    <tr><td><strong>D (cm&#xB2;/s)</strong></td><td id="diffCoeffLow" class="text-center"></td><td id="diffCoeffHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>&#x3C3; diffused (cm)</strong></td><td id="sigAfterDiffLow" class="text-center"></td><td id="sigAfterDiffHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>Rp&#x2032; (cm)</strong></td><td id="rpPrimeLow" class="text-center"></td><td id="rpPrimeHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>&#x394;Rp (cm)</strong></td><td id="deltaRpLow" class="text-center"></td><td id="deltaRpHigh" class="text-center"></td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- ═══ ORIGINAL N(x,t) Chart ═══ -->
                 <div class="card mb-4">
-                    <div class="card-header">N(x,t) vs. x (cm) — As-implanted vs After Diffusion</div>
+                    <div class="card-header">N(x,t) vs. x (cm) &#x2014; Lower &amp; Upper Energy: As-implanted vs After Diffusion</div>
                     <div class="card-body">
                         <div class="chart-container"><canvas id="cmChart"></canvas></div>
                         <div class="zoom-buttons">
                             <button id="resetZoomCm" class="btn btn-sm btn-secondary">Reset Zoom</button>
-                            <button id="zoomInCm"    class="btn btn-sm btn-secondary">Zoom In</button>
-                            <button id="zoomOutCm"   class="btn btn-sm btn-secondary">Zoom Out</button>
+                            <button id="zoomInCm" class="btn btn-sm btn-secondary">Zoom In</button>
+                            <button id="zoomOutCm" class="btn btn-sm btn-secondary">Zoom Out</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- ═══ NEW: Material Comparison Chart ═══ -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        N(x,t) vs. x — <span id="groupLabel"></span> Material Comparison
+                        N(x,t) vs. x &#x2014; <span id="groupLabel"></span> Material Comparison
                         <small class="fw-normal ms-2" style="opacity:0.75;">Solid = As-implanted &nbsp;|&nbsp; Dashed = After diffusion (selected only)</small>
                     </div>
                     <div class="card-body">
@@ -197,77 +150,57 @@
                         <div class="chart-container mt-2"><canvas id="compChart"></canvas></div>
                         <div class="zoom-buttons mt-2">
                             <button id="resetZoomComp" class="btn btn-sm btn-secondary">Reset Zoom</button>
-                            <button id="zoomInComp"    class="btn btn-sm btn-secondary">Zoom In</button>
-                            <button id="zoomOutComp"   class="btn btn-sm btn-secondary">Zoom Out</button>
+                            <button id="zoomInComp" class="btn btn-sm btn-secondary">Zoom In</button>
+                            <button id="zoomOutComp" class="btn btn-sm btn-secondary">Zoom Out</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Oxide Thickness Slice -->
                 <div class="card mb-4">
                     <div class="card-header">N(x) at Oxide Thickness</div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Oxide Thickness (XOX):</strong> <span id="toxValue"></span> cm</p>
-                                <p><strong>N(x) As-implanted:</strong> <span id="nxToxStatic"></span> cm⁻³</p>
-                            </div>
-                            <div class="col-md-6 diffusion-section">
-                                <p><strong>N(x) After Diffusion:</strong> <span id="nxToxDiff"></span> cm⁻³</p>
-                                <p><strong>Concentration Change:</strong> <span id="concChange"></span>%</p>
-                            </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0" style="font-size:0.85em;">
+                                <thead class="table-dark">
+                                    <tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower E</th><th class="text-center" style="color:#ff8f00;">Upper E</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>XOX (cm)</strong></td><td colspan="2" class="text-center"><span id="toxValue"></span></td></tr>
+                                    <tr><td><strong>N(x) As-implanted</strong></td><td id="nxToxStaticLow" class="text-center"></td><td id="nxToxStaticHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>N(x) After Diffusion</strong></td><td id="nxToxDiffLow" class="text-center"></td><td id="nxToxDiffHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>Conc. Change (%)</strong></td><td id="concChangeLow" class="text-center"></td><td id="concChangeHigh" class="text-center"></td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- Junction Depth -->
                 <div class="card mb-4">
-                    <div class="card-header">
-                        Junction Depth Without Annealing
-                        <span style="margin-left: 100px;">Junction Depth With Annealing</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Species Implanted Junction Depth (xj1s):</strong> <span id="xjStatic"></span> cm</p>
-                                <p><strong>Species Implanted Effective Junction (xj1s - XOX):</strong> <span id="xjEffStatic"></span> cm</p>
-                            </div>
-                            <div class="col-md-6 diffusion-section">
-                                <p><strong>Diffused Junction Depth (xj2s):</strong> <span id="xjDiff"></span> cm</p>
-                                <p><strong>Diffused Effective Junction (xj2s - XOX):</strong> <span id="xjEffDiff"></span> cm</p>
-                            </div>
+                    <div class="card-header">Junction Depths</div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0" style="font-size:0.85em;">
+                                <thead class="table-dark">
+                                    <tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower E</th><th class="text-center" style="color:#ff8f00;">Upper E</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>xj1s — As-implanted (cm)</strong></td><td id="xjStaticLow" class="text-center"></td><td id="xjStaticHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>xj1s_eff = xj1s&#x2212;XOX (cm)</strong></td><td id="xjEffStaticLow" class="text-center"></td><td id="xjEffStaticHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>xj2s — After Diffusion (cm)</strong></td><td id="xjDiffLow" class="text-center"></td><td id="xjDiffHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>xj2s_eff = xj2s&#x2212;XOX (cm)</strong></td><td id="xjEffDiffLow" class="text-center"></td><td id="xjEffDiffHigh" class="text-center"></td></tr>
+                                    <tr><td><strong>Diff1 (xj1s&#x2212;xj1s_eff)</strong></td><td id="junctionDiff1Low" class="text-center"></td><td id="junctionDiff1High" class="text-center"></td></tr>
+                                    <tr><td><strong>Diff2 (xj2s&#x2212;xj2s_eff)</strong></td><td id="junctionDiff2Low" class="text-center"></td><td id="junctionDiff2High" class="text-center"></td></tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <hr class="my-3">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="alert alert-info mb-3" role="alert">
-                                    <h6 class="alert-heading"><strong>Junction Depth Difference Formula</strong></h6>
-                                    <div style="background-color:#fff;padding:15px;border-radius:5px;font-family:monospace;margin:10px 0;">
-                                        <div style="margin-bottom:10px;"><strong>Difference =</strong> xj1s - (xj1s - XOX)</div>
-                                        <div><strong>Difference =</strong> xj2s - (xj2s - XOX)</div>
-                                    </div>
-                                    <p class="mb-0" style="font-size:0.9em;margin-top:10px;">
-                                        <strong>Explanation:</strong> Both differences equal the oxide thickness (XOX).
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Difference (xj1s - xj1s_eff):</strong> <span id="junctionDiff1"></span> cm</p>
-                                <small class="text-muted">Should equal XOX</small>
-                            </div>
-                            <div class="col-md-6 diffusion-section">
-                                <p><strong>Difference (xj2s - xj2s_eff):</strong> <span id="junctionDiff2"></span> cm</p>
-                                <small class="text-muted">Should equal XOX</small>
-                            </div>
+                        <div class="alert alert-info mt-3 mb-0 p-2" style="font-size:0.82em;">
+                            Both Diff1 and Diff2 should equal XOX = <span id="toxValueJn"></span> cm
                         </div>
                     </div>
                 </div>
-
-            </div><!-- /results -->
-        </div><!-- /row -->
-    </div><!-- /container -->
+            </div>
+        </div>
+    </div>
 
     <!-- Semiconductor Type Card -->
     <div class="card mb-4" id="semiconductorTypeCard" style="display:none;">
@@ -276,17 +209,14 @@
             <div class="row">
                 <div class="col-md-12">
                     <p><strong>Semiconductor Type:</strong> <span id="semiconductorType" class="badge"></span></p>
-                    <p><strong>Temperature Threshold:</strong> 550°C</p>
-                    <p><small class="text-muted">For Gallium Arsenide materials: Above 550°C = n-type, Below 550°C = p-type</small></p>
+                    <p><strong>Temperature Threshold:</strong> 550&#xB0;C</p>
+                    <p><small class="text-muted">For Gallium Arsenide materials: Above 550&#xB0;C = n-type, Below 550&#xB0;C = p-type</small></p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-    // ═══════════════════════════════════════════
-    //  Ion data
-    // ═══════════════════════════════════════════
     const metalIonData = {
         'Arsenic': {
             "10.00 keV":{"rp":124e-8,"sig":47e-8},"11.00 keV":{"rp":131e-8,"sig":49e-8},"12.00 keV":{"rp":139e-8,"sig":51e-8},
@@ -353,6 +283,52 @@
             "7.00 MeV":{"rp":2.76e-4,"sig":1038e-8},"8.00 MeV":{"rp":3.00e-4,"sig":1102e-8},"9.00 MeV":{"rp":3.24e-4,"sig":1159e-8},
             "10.00 MeV":{"rp":3.47e-4,"sig":1210e-8}
         },
+
+        // Gallium in Silicon — SRIM data (Projected Range & Longitudinal Straggling, Angstroms converted to cm)
+        // Ion=Ga[31], Mass=68.93 amu, Target=Si density 2.3212 g/cm3
+        'Gallium in Silicon': {
+            "10.00 keV":{"rp":125e-8,"sig":48e-8},"11.00 keV":{"rp":133e-8,"sig":51e-8},
+            "12.00 keV":{"rp":140e-8,"sig":53e-8},"13.00 keV":{"rp":148e-8,"sig":56e-8},
+            "14.00 keV":{"rp":156e-8,"sig":58e-8},"15.00 keV":{"rp":163e-8,"sig":61e-8},
+            "16.00 keV":{"rp":171e-8,"sig":63e-8},"17.00 keV":{"rp":178e-8,"sig":65e-8},
+            "18.00 keV":{"rp":185e-8,"sig":68e-8},"20.00 keV":{"rp":200e-8,"sig":72e-8},
+            "22.50 keV":{"rp":217e-8,"sig":77e-8},"25.00 keV":{"rp":235e-8,"sig":83e-8},
+            "27.50 keV":{"rp":252e-8,"sig":88e-8},"30.00 keV":{"rp":269e-8,"sig":93e-8},
+            "32.50 keV":{"rp":285e-8,"sig":98e-8},"35.00 keV":{"rp":302e-8,"sig":103e-8},
+            "37.50 keV":{"rp":319e-8,"sig":108e-8},"40.00 keV":{"rp":335e-8,"sig":113e-8},
+            "45.00 keV":{"rp":368e-8,"sig":122e-8},"50.00 keV":{"rp":400e-8,"sig":132e-8},
+            "55.00 keV":{"rp":433e-8,"sig":141e-8},"60.00 keV":{"rp":465e-8,"sig":150e-8},
+            "65.00 keV":{"rp":497e-8,"sig":159e-8},"70.00 keV":{"rp":529e-8,"sig":168e-8},
+            "80.00 keV":{"rp":593e-8,"sig":185e-8},"90.00 keV":{"rp":658e-8,"sig":203e-8},
+            "100.00 keV":{"rp":722e-8,"sig":220e-8},"110.00 keV":{"rp":787e-8,"sig":237e-8},
+            "120.00 keV":{"rp":851e-8,"sig":254e-8},"130.00 keV":{"rp":916e-8,"sig":270e-8},
+            "140.00 keV":{"rp":982e-8,"sig":287e-8},"150.00 keV":{"rp":1047e-8,"sig":303e-8},
+            "160.00 keV":{"rp":1112e-8,"sig":319e-8},"170.00 keV":{"rp":1176e-8,"sig":335e-8},
+            "180.00 keV":{"rp":1241e-8,"sig":350e-8},"200.00 keV":{"rp":1371e-8,"sig":381e-8},
+            "225.00 keV":{"rp":1534e-8,"sig":418e-8},"250.00 keV":{"rp":1699e-8,"sig":455e-8},
+            "275.00 keV":{"rp":1865e-8,"sig":492e-8},"300.00 keV":{"rp":2033e-8,"sig":528e-8},
+            "325.00 keV":{"rp":2203e-8,"sig":563e-8},"350.00 keV":{"rp":2373e-8,"sig":598e-8},
+            "375.00 keV":{"rp":2544e-8,"sig":632e-8},"400.00 keV":{"rp":2716e-8,"sig":666e-8},
+            "450.00 keV":{"rp":3061e-8,"sig":732e-8},"500.00 keV":{"rp":3407e-8,"sig":796e-8},
+            "550.00 keV":{"rp":3755e-8,"sig":858e-8},"600.00 keV":{"rp":4102e-8,"sig":918e-8},
+            "650.00 keV":{"rp":4449e-8,"sig":975e-8},"700.00 keV":{"rp":4796e-8,"sig":1031e-8},
+            "800.00 keV":{"rp":5486e-8,"sig":1138e-8},"900.00 keV":{"rp":6170e-8,"sig":1237e-8},
+            "1.00 MeV":{"rp":6847e-8,"sig":1330e-8},"1.10 MeV":{"rp":7515e-8,"sig":1417e-8},
+            "1.20 MeV":{"rp":8174e-8,"sig":1499e-8},"1.30 MeV":{"rp":8822e-8,"sig":1575e-8},
+            "1.40 MeV":{"rp":9460e-8,"sig":1647e-8},"1.50 MeV":{"rp":1.01e-4,"sig":1714e-8},
+            "1.60 MeV":{"rp":1.07e-4,"sig":1777e-8},"1.70 MeV":{"rp":1.13e-4,"sig":1837e-8},
+            "1.80 MeV":{"rp":1.19e-4,"sig":1893e-8},"2.00 MeV":{"rp":1.30e-4,"sig":1998e-8},
+            "2.25 MeV":{"rp":1.44e-4,"sig":2115e-8},"2.50 MeV":{"rp":1.57e-4,"sig":2217e-8},
+            "2.75 MeV":{"rp":1.70e-4,"sig":2306e-8},"3.00 MeV":{"rp":1.82e-4,"sig":2385e-8},
+            "3.25 MeV":{"rp":1.93e-4,"sig":2455e-8},"3.50 MeV":{"rp":2.04e-4,"sig":2518e-8},
+            "3.75 MeV":{"rp":2.15e-4,"sig":2574e-8},"4.00 MeV":{"rp":2.25e-4,"sig":2625e-8},
+            "4.50 MeV":{"rp":2.44e-4,"sig":2720e-8},"5.00 MeV":{"rp":2.62e-4,"sig":2799e-8},
+            "5.50 MeV":{"rp":2.79e-4,"sig":2868e-8},"6.00 MeV":{"rp":2.95e-4,"sig":2927e-8},
+            "6.50 MeV":{"rp":3.10e-4,"sig":2979e-8},"7.00 MeV":{"rp":3.25e-4,"sig":3026e-8},
+            "8.00 MeV":{"rp":3.53e-4,"sig":3118e-8},"9.00 MeV":{"rp":3.80e-4,"sig":3195e-8},
+            "10.00 MeV":{"rp":4.05e-4,"sig":3262e-8}
+        },
+
         'Silicon in GaAs': {
             "10.00 keV":{"rp":1.1e-06,"sig":8.8e-07},"11.00 keV":{"rp":1.18e-06,"sig":9.4e-07},
             "12.00 keV":{"rp":1.27e-06,"sig":1e-06},"13.00 keV":{"rp":1.35e-06,"sig":1.06e-06},
@@ -393,11 +369,8 @@
         }
     };
 
-    // ═══════════════════════════════════════════
-    //  Material groups & colours for comparison
-    // ═══════════════════════════════════════════
     const GROUPS = {
-        Silicon: ['Arsenic', 'Phosphorus', 'Boron'],
+        Silicon: ['Arsenic', 'Phosphorus', 'Boron', 'Gallium in Silicon'],
         GaAs:    ['Silicon in GaAs', 'Germanium in GaAs'],
         SiC:     ['Phosphorus in SiC', 'Boron in SiC'],
         GaN:     ['Gallium in Nitrogen']
@@ -406,6 +379,7 @@
         'Arsenic':            '#1565C0',
         'Phosphorus':         '#E65100',
         'Boron':              '#2E7D32',
+        'Gallium in Silicon': '#7B1FA2',
         'Silicon in GaAs':    '#6A1B9A',
         'Germanium in GaAs':  '#00838F',
         'Phosphorus in SiC':  '#F9A825',
@@ -413,17 +387,14 @@
         'Gallium in Nitrogen':'#4E342E'
     };
 
-    // Constants
     const k_boltzmann = 8.617e-5;
     const D0 = 10.5;
     const Ea_Arsenic = 4.05;
     const Ea_Phosphorus = 3.66;
 
-    // Two separate chart instances
-    let cmChart   = null;
+    let cmChart = null;
     let compChart = null;
 
-    // ─── Helpers ───────────────────────────────
     function getGroup(m) {
         for (const [g, arr] of Object.entries(GROUPS)) if (arr.includes(m)) return g;
         return 'Unknown';
@@ -455,92 +426,56 @@
         return Array.from({ length: 1001 }, (_, i) => x_min + (x_max - x_min) * i / 1000);
     }
 
-    // ─── Update energy dropdown ─────────────────
     function updateIonEnergyDropdown() {
         const metal = document.getElementById('metal-select').value;
-        const energy = document.getElementById('energy-select');
-        energy.innerHTML = '';
-        Object.keys(metalIonData[metal]).forEach(e => {
-            const opt = document.createElement('option');
-            opt.value = e; opt.textContent = e;
-            energy.appendChild(opt);
+        const keys  = Object.keys(metalIonData[metal]);
+        const lower = document.getElementById('energy-lower');
+        const upper = document.getElementById('energy-upper');
+        lower.innerHTML = '';
+        upper.innerHTML = '';
+        keys.forEach(e => {
+            const o1 = document.createElement('option'); o1.value = e; o1.textContent = e; lower.appendChild(o1);
+            const o2 = document.createElement('option'); o2.value = e; o2.textContent = e; upper.appendChild(o2);
         });
+        // Default: lower = first key, upper = last key
+        lower.selectedIndex = 0;
+        upper.selectedIndex = keys.length - 1;
+        // No guards — calculateResults swaps lo/hi automatically if needed
     }
 
-    // ═══════════════════════════════════════════
-    //  ORIGINAL single-metal chart (cmChart)
-    // ═══════════════════════════════════════════
-    function buildOriginalChart(x_vals, N_static, N_diff, tox, anneal_time_s, anneal_temp_c) {
-        const dataStatic   = x_vals.map((x, i) => ({ x, y: N_static[i] })).filter(p => p.y > 0);
-        const dataDiff     = x_vals.map((x, i) => ({ x, y: N_diff[i]   })).filter(p => p.y > 0);
-        const annealMin    = (anneal_time_s / 60).toFixed(1);
-        const posNStatic   = N_static.filter(n => n > 0);
+    function buildOriginalChart(x_lo, N_st_lo, N_di_lo, x_hi, N_st_hi, N_di_hi, tox, anneal_time_s, anneal_temp_c, eLow, eHigh) {
+        const annealMin = (anneal_time_s / 60).toFixed(1);
+        const allPos = [...N_st_lo, ...N_st_hi].filter(n => n > 0);
+
+        const mk = (x, N) => x.map((v, i) => ({ x: v, y: N[i] })).filter(p => p.y > 0);
 
         if (cmChart) cmChart.destroy();
         cmChart = new Chart(document.getElementById('cmChart').getContext('2d'), {
             type: 'line',
             data: {
                 datasets: [
-                    {
-                        label: 'As-implanted',
-                        data: dataStatic,
-                        borderColor: 'blue',
-                        pointRadius: 0,
-                        borderWidth: 2
-                    },
-                    {
-                        label: `After ${annealMin} minutes @ ${anneal_temp_c}°C`,
-                        data: dataDiff,
-                        borderColor: 'orange',
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                        borderWidth: 2
-                    },
-                    {
-                        label: 'Oxide Boundary',
-                        data: [
-                            { x: tox, y: Math.min(...posNStatic) },
-                            { x: tox, y: Math.max(...posNStatic) * 10 }
-                        ],
-                        borderColor: 'red',
-                        pointRadius: 0,
-                        borderWidth: 2,
-                        borderDash: [2, 2]
-                    }
+                    { label: 'As-impl @ ' + eLow,  data: mk(x_lo, N_st_lo), borderColor: '#1565C0', pointRadius: 0, borderWidth: 2.5 },
+                    { label: 'Diffused @ ' + eLow,  data: mk(x_lo, N_di_lo), borderColor: '#1565C0', borderDash: [6,4], pointRadius: 0, borderWidth: 2 },
+                    { label: 'As-impl @ ' + eHigh, data: mk(x_hi, N_st_hi), borderColor: '#E65100', pointRadius: 0, borderWidth: 2.5 },
+                    { label: 'Diffused @ ' + eHigh, data: mk(x_hi, N_di_hi), borderColor: '#E65100', borderDash: [6,4], pointRadius: 0, borderWidth: 2 },
+                    { label: 'Oxide Boundary', data: [{ x: tox, y: Math.min(...allPos) }, { x: tox, y: Math.max(...allPos) * 10 }], borderColor: 'red', pointRadius: 0, borderWidth: 2, borderDash: [2,2] }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 scales: {
                     x: { type: 'linear', title: { display: true, text: 'x (cm)' } },
-                    y: {
-                        type: 'logarithmic',
-                        title: { display: true, text: 'N(x) (cm⁻³)' },
-                        ticks: { callback: v => '10^' + Math.log10(v).toFixed(0) }
-                    }
+                    y: { type: 'logarithmic', title: { display: true, text: 'N(x) (cm\u207B\xB3)' }, ticks: { callback: v => '10^' + Math.log10(v).toFixed(0) } }
                 },
                 plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `N(x): ${ctx.parsed.y.toExponential(2)} cm⁻³`,
-                            title: ctx => `x (cm): ${ctx[0].parsed.x.toExponential(2)}`
-                        }
-                    },
-                    zoom: {
-                        zoom: { wheel: { enabled: true, speed: 0.1 }, pinch: { enabled: true }, mode: 'xy', sensitivity: 3 },
-                        pan:  { enabled: true, mode: 'xy' },
-                        limits: { y: { min: 'original', max: 'original' } }
-                    }
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toExponential(2) + ' cm\u207B\xB3', title: ctx => 'x: ' + ctx[0].parsed.x.toExponential(2) + ' cm' } },
+                    zoom: { zoom: { wheel: { enabled: true, speed: 0.1 }, pinch: { enabled: true }, mode: 'xy', sensitivity: 3 }, pan: { enabled: true, mode: 'xy' }, limits: { y: { min: 'original', max: 'original' } } }
                 }
             }
         });
     }
 
-    // ═══════════════════════════════════════════
-    //  NEW comparison chart (compChart)
-    // ═══════════════════════════════════════════
-    function buildCompChart(selMetal, ion_energy, nb, q, tox, Tc, ts) {
+    function buildCompChart(selMetal, ion_energy_lo, nb, q, tox, Tc, ts) {
         const group   = getGroup(selMetal);
         const members = GROUPS[group];
         document.getElementById('groupLabel').textContent = group;
@@ -549,7 +484,7 @@
         const mdata = [];
 
         for (const m of members) {
-            const ek = closestE(m, ion_energy);
+            const ek = closestE(m, ion_energy_lo);
             const { rp, sig } = metalIonData[m][ek];
             const D    = calculateDiffusionCoeff(Tc, m);
             const sigt = Math.sqrt(sig ** 2 + 2 * D * ts);
@@ -566,50 +501,19 @@
         for (const { m, ek, rp, sig, sigt, np, npt } of mdata) {
             const col   = COLORS[m];
             const isSel = m === selMetal;
-            const eNote = ek !== ion_energy ? ` @${ek}` : '';
-
-            // As-implanted — solid
-            const pts = xs.map(x => ({ x, y: Math.max(np * Math.exp(-((x - rp) ** 2) / (2 * sig ** 2)) - nb, 0) }))
-                          .filter(p => p.y > 0);
-            datasets.push({
-                label: `${m}${eNote}`,
-                data: pts,
-                borderColor: col,
-                pointRadius: 0,
-                borderWidth: isSel ? 3 : 1.8,
-                borderDash: [],
-                order: isSel ? 0 : 1
-            });
-
-            // After diffusion — dashed, selected only
+            const eNote = ek !== ion_energy_lo ? ' @' + ek : '';
+            const pts = xs.map(x => ({ x, y: Math.max(np * Math.exp(-((x - rp) ** 2) / (2 * sig ** 2)) - nb, 0) })).filter(p => p.y > 0);
+            datasets.push({ label: m + eNote, data: pts, borderColor: col, pointRadius: 0, borderWidth: isSel ? 3 : 1.8, borderDash: [], order: isSel ? 0 : 1 });
             if (isSel) {
                 const dm = (ts / 60).toFixed(1);
-                const pts2 = xs.map(x => ({ x, y: Math.max(npt * Math.exp(-((x - rp) ** 2) / (2 * sigt ** 2)) - nb, 0) }))
-                               .filter(p => p.y > 0);
-                datasets.push({
-                    label: `${m} after ${dm}min @${Tc}°C`,
-                    data: pts2,
-                    borderColor: col,
-                    pointRadius: 0,
-                    borderWidth: 2,
-                    borderDash: [7, 4],
-                    order: 0
-                });
+                const pts2 = xs.map(x => ({ x, y: Math.max(npt * Math.exp(-((x - rp) ** 2) / (2 * sigt ** 2)) - nb, 0) })).filter(p => p.y > 0);
+                datasets.push({ label: m + ' after ' + dm + 'min @' + Tc + '\xB0C', data: pts2, borderColor: col, pointRadius: 0, borderWidth: 2, borderDash: [7,4], order: 0 });
             }
         }
 
-        // Oxide boundary
         const allY = datasets.flatMap(d => d.data.map(p => p.y)).filter(y => y > 0);
         if (allY.length) {
-            datasets.push({
-                label: 'Oxide Boundary (XOX)',
-                data: [{ x: tox, y: Math.min(...allY) }, { x: tox, y: Math.max(...allY) * 10 }],
-                borderColor: '#e53935',
-                borderWidth: 2,
-                borderDash: [3, 3],
-                pointRadius: 0,
-                order: 2
-            });
+            datasets.push({ label: 'Oxide Boundary (XOX)', data: [{ x: tox, y: Math.min(...allY) }, { x: tox, y: Math.max(...allY) * 10 }], borderColor: '#e53935', borderWidth: 2, borderDash: [3,3], pointRadius: 0, order: 2 });
         }
 
         if (compChart) compChart.destroy();
@@ -617,43 +521,29 @@
             type: 'line',
             data: { datasets },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 scales: {
                     x: { type: 'linear', title: { display: true, text: 'x (cm)' } },
-                    y: {
-                        type: 'logarithmic',
-                        title: { display: true, text: 'N(x) (cm⁻³)' },
-                        ticks: { callback: v => '10^' + Math.log10(v).toFixed(0) }
-                    }
+                    y: { type: 'logarithmic', title: { display: true, text: 'N(x) (cm\u207B\xB3)' }, ticks: { callback: v => '10^' + Math.log10(v).toFixed(0) } }
                 },
                 plugins: {
                     legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toExponential(2)} cm⁻³`,
-                            title: ctx => `x: ${ctx[0].parsed.x.toExponential(3)} cm`
-                        }
-                    },
-                    zoom: {
-                        zoom: { wheel: { enabled: true, speed: 0.1 }, pinch: { enabled: true }, mode: 'xy' },
-                        pan:  { enabled: true, mode: 'xy' }
-                    }
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toExponential(2) + ' cm\u207B\xB3', title: ctx => 'x: ' + ctx[0].parsed.x.toExponential(3) + ' cm' } },
+                    zoom: { zoom: { wheel: { enabled: true, speed: 0.1 }, pinch: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } }
                 }
             }
         });
 
-        // Build custom legend
         const leg = document.getElementById('compLegend');
         leg.innerHTML = '';
         for (const ds of datasets) {
             const isDash = ds.borderDash && ds.borderDash.length > 0;
-            const item   = document.createElement('div');
+            const item = document.createElement('div');
             item.className = 'comp-legend-item';
             const line = document.createElement('span');
             line.style.cssText = isDash
-                ? `display:inline-block;width:30px;height:0;border-top:3px dashed ${ds.borderColor};`
-                : `display:inline-block;width:30px;height:${ds.borderWidth || 2}px;background:${ds.borderColor};border-radius:2px;`;
+                ? 'display:inline-block;width:30px;height:0;border-top:3px dashed ' + ds.borderColor + ';'
+                : 'display:inline-block;width:30px;height:' + (ds.borderWidth || 2) + 'px;background:' + ds.borderColor + ';border-radius:2px;';
             const lbl = document.createElement('span');
             lbl.textContent = ds.label;
             item.appendChild(line);
@@ -662,75 +552,82 @@
         }
     }
 
-    // ═══════════════════════════════════════════
-    //  Main calculate
-    // ═══════════════════════════════════════════
+    // Helper to compute all derived values for one energy key
+    function calcOne(metal_type, ion_energy, nb, q, tox, anneal_temp_c, anneal_time_s) {
+        const ionData = metalIonData[metal_type][ion_energy];
+        const rp = ionData.rp, sig = ionData.sig;
+        const D     = calculateDiffusionCoeff(anneal_temp_c, metal_type);
+        const sig_t = Math.sqrt(sig ** 2 + 2 * D * anneal_time_s);
+        const x_vals = generateXValues(rp, sig, sig_t);
+        const np   = q / (sig   * Math.sqrt(2 * Math.PI));
+        const np_t = q / (sig_t * Math.sqrt(2 * Math.PI));
+        const N_static = x_vals.map(x => Math.max(np   * Math.exp(-((x - rp) ** 2) / (2 * sig   ** 2)) - nb, 0));
+        const N_diff   = x_vals.map(x => Math.max(np_t * Math.exp(-((x - rp) ** 2) / (2 * sig_t ** 2)) - nb, 0));
+        const N_x_tox_static = Math.max(np   * Math.exp(-((tox - rp) ** 2) / (2 * sig   ** 2)) - nb, 0);
+        const N_x_tox_diff   = Math.max(np_t * Math.exp(-((tox - rp) ** 2) / (2 * sig_t ** 2)) - nb, 0);
+        const xj_static      = np   > nb ? rp + sig   * Math.sqrt(2 * Math.log(np   / nb)) : 0;
+        const xj_eff_static  = xj_static > tox ? xj_static - tox : 0;
+        const xj_diff        = np_t > nb ? rp + sig_t * Math.sqrt(2 * Math.log(np_t / nb)) : 0;
+        const xj_eff_diff    = xj_diff > tox ? xj_diff - tox : 0;
+        const deltaXj        = (xj_diff && xj_static) ? xj_diff - xj_static : 0;
+        const rpPrime        = rp + deltaXj / 2;
+        return { rp, sig, D, sig_t, np, np_t, x_vals, N_static, N_diff,
+                 N_x_tox_static, N_x_tox_diff,
+                 xj_static, xj_eff_static, xj_diff, xj_eff_diff,
+                 rpPrime, deltaRp: rpPrime - rp };
+    }
+
+    function fillCol(suffix, r, ion_energy) {
+        const s = v => v ? v.toExponential(4) : 'N/A';
+        document.getElementById('ionEnergy'    + suffix).textContent = ion_energy;
+        document.getElementById('ionRP'        + suffix).textContent = r.rp.toExponential(4);
+        document.getElementById('ionSig'       + suffix).textContent = r.sig.toExponential(4);
+        document.getElementById('diffCoeff'    + suffix).textContent = r.D.toExponential(4);
+        document.getElementById('sigAfterDiff' + suffix).textContent = r.sig_t.toExponential(4);
+        document.getElementById('rpPrime'      + suffix).textContent = r.rpPrime.toExponential(4);
+        document.getElementById('deltaRp'      + suffix).textContent = r.deltaRp.toExponential(4);
+        document.getElementById('nxToxStatic'  + suffix).textContent = r.N_x_tox_static.toExponential(4);
+        document.getElementById('nxToxDiff'    + suffix).textContent = r.N_x_tox_diff.toExponential(4);
+        document.getElementById('concChange'   + suffix).textContent = r.N_x_tox_static > 0
+            ? ((r.N_x_tox_diff - r.N_x_tox_static) / r.N_x_tox_static * 100).toFixed(2) : 'N/A';
+        document.getElementById('xjStatic'    + suffix).textContent = s(r.xj_static);
+        document.getElementById('xjEffStatic' + suffix).textContent = s(r.xj_eff_static);
+        document.getElementById('xjDiff'      + suffix).textContent = s(r.xj_diff);
+        document.getElementById('xjEffDiff'   + suffix).textContent = s(r.xj_eff_diff);
+        const jd1 = r.xj_static ? r.xj_static - r.xj_eff_static : 0;
+        const jd2 = r.xj_diff   ? r.xj_diff   - r.xj_eff_diff   : 0;
+        document.getElementById('junctionDiff1' + suffix).textContent = jd1 ? jd1.toExponential(4) : 'N/A';
+        document.getElementById('junctionDiff2' + suffix).textContent = jd2 ? jd2.toExponential(4) : 'N/A';
+    }
+
     function calculateResults() {
         const metal_type    = document.getElementById('metal-select').value;
-        const ion_energy    = document.getElementById('energy-select').value;
+        const ion_energy_lo = document.getElementById('energy-lower').value;
+        const ion_energy_hi = document.getElementById('energy-upper').value;
         const nb            = parseFloat(document.getElementById('nb').value);
         const q             = parseFloat(document.getElementById('q').value);
         const tox           = parseFloat(document.getElementById('tox').value);
         const anneal_temp_c = parseFloat(document.getElementById('anneal_temp_c').value);
         const anneal_time_s = parseFloat(document.getElementById('anneal_time_s').value);
 
-        const ionData = metalIonData[metal_type][ion_energy];
-        const rp = ionData.rp, sig = ionData.sig;
+        // Ensure lo <= hi in energy; swap silently if reversed
+        if (parseEV(ion_energy_lo) > parseEV(ion_energy_hi)) {
+            const tmp = ion_energy_lo; ion_energy_lo = ion_energy_hi; ion_energy_hi = tmp;
+        }
+        const rLow  = calcOne(metal_type, ion_energy_lo, nb, q, tox, anneal_temp_c, anneal_time_s);
+        const rHigh = calcOne(metal_type, ion_energy_hi, nb, q, tox, anneal_temp_c, anneal_time_s);
 
-        const D     = calculateDiffusionCoeff(anneal_temp_c, metal_type);
-        const sig_t = Math.sqrt(sig ** 2 + 2 * D * anneal_time_s);
-        const x_vals = generateXValues(rp, sig, sig_t);
-
-        const np   = q / (sig   * Math.sqrt(2 * Math.PI));
-        const np_t = q / (sig_t * Math.sqrt(2 * Math.PI));
-
-        const N_static = x_vals.map(x => Math.max(np   * Math.exp(-((x - rp) ** 2) / (2 * sig   ** 2)) - nb, 0));
-        const N_diff   = x_vals.map(x => Math.max(np_t * Math.exp(-((x - rp) ** 2) / (2 * sig_t ** 2)) - nb, 0));
-
-        const N_x_tox_static = Math.max(np   * Math.exp(-((tox - rp) ** 2) / (2 * sig   ** 2)) - nb, 0);
-        const N_x_tox_diff   = Math.max(np_t * Math.exp(-((tox - rp) ** 2) / (2 * sig_t ** 2)) - nb, 0);
-
-        const xj_static    = np   > nb ? rp + sig   * Math.sqrt(2 * Math.log(np   / nb)) : 0;
-        const xj_eff_static = xj_static > tox ? xj_static - tox : 0;
-        const xj_diff      = np_t > nb ? rp + sig_t * Math.sqrt(2 * Math.log(np_t / nb)) : 0;
-        const xj_eff_diff  = xj_diff > tox ? xj_diff - tox : 0;
-
-        // Show results section
         document.getElementById('resultsSection').style.display = 'block';
+        document.getElementById('metalType').textContent     = metal_type;
+        document.getElementById('annealTime').textContent    = anneal_time_s;
+        document.getElementById('annealTimeMin').textContent = (anneal_time_s / 60).toFixed(2);
+        document.getElementById('annealTemp').textContent    = anneal_temp_c;
+        document.getElementById('toxValue').textContent      = tox.toExponential(4);
+        document.getElementById('toxValueJn').textContent    = tox.toExponential(4);
 
-        // Fill parameter panel
-        document.getElementById('metalType').textContent    = metal_type;
-        document.getElementById('ionEnergy').textContent    = ion_energy;
-        document.getElementById('ionRP').textContent        = rp.toExponential(4);
-        document.getElementById('ionSig').textContent       = sig.toExponential(4);
+        fillCol('Low',  rLow,  ion_energy_lo);
+        fillCol('High', rHigh, ion_energy_hi);
 
-        const deltaXj = (xj_diff && xj_static) ? xj_diff - xj_static : 0;
-        const rpPrime = rp + deltaXj / 2;
-        document.getElementById('rpPrime').textContent      = rpPrime.toExponential(4);
-        document.getElementById('deltaRp').textContent      = (rpPrime - rp).toExponential(4);
-        document.getElementById('annealTime').textContent   = anneal_time_s;
-        document.getElementById('annealTimeMin').textContent= (anneal_time_s / 60).toFixed(2);
-        document.getElementById('annealTemp').textContent   = anneal_temp_c;
-        document.getElementById('diffCoeff').textContent    = D.toExponential(4);
-        document.getElementById('sigAfterDiff').textContent = sig_t.toExponential(4);
-
-        document.getElementById('toxValue').textContent     = tox.toExponential(4);
-        document.getElementById('nxToxStatic').textContent  = N_x_tox_static.toExponential(4);
-        document.getElementById('nxToxDiff').textContent    = N_x_tox_diff.toExponential(4);
-        document.getElementById('concChange').textContent   = N_x_tox_static > 0
-            ? ((N_x_tox_diff - N_x_tox_static) / N_x_tox_static * 100).toFixed(2) : 'N/A';
-
-        document.getElementById('xjStatic').textContent    = xj_static    ? xj_static.toExponential(4)    : 'N/A';
-        document.getElementById('xjEffStatic').textContent = xj_eff_static ? xj_eff_static.toExponential(4): 'N/A';
-        document.getElementById('xjDiff').textContent      = xj_diff      ? xj_diff.toExponential(4)      : 'N/A';
-        document.getElementById('xjEffDiff').textContent   = xj_eff_diff  ? xj_eff_diff.toExponential(4)  : 'N/A';
-
-        const jd1 = xj_static ? xj_static - xj_eff_static : 0;
-        const jd2 = xj_diff   ? xj_diff   - xj_eff_diff   : 0;
-        document.getElementById('junctionDiff1').textContent = jd1 ? jd1.toExponential(4) : 'N/A';
-        document.getElementById('junctionDiff2').textContent = jd2 ? jd2.toExponential(4) : 'N/A';
-
-        // Semiconductor type
         const semInfo = getSemiconductorType(metal_type, anneal_temp_c);
         const semCard = document.getElementById('semiconductorTypeCard');
         if (semInfo) {
@@ -742,21 +639,18 @@
             semCard.style.display = 'none';
         }
 
-        // ── Build BOTH charts ──
-        buildOriginalChart(x_vals, N_static, N_diff, tox, anneal_time_s, anneal_temp_c);
-        buildCompChart(metal_type, ion_energy, nb, q, tox, anneal_temp_c, anneal_time_s);
+        buildOriginalChart(rLow.x_vals, rLow.N_static, rLow.N_diff,
+                           rHigh.x_vals, rHigh.N_static, rHigh.N_diff,
+                           tox, anneal_time_s, anneal_temp_c, ion_energy_lo, ion_energy_hi);
+        buildCompChart(metal_type, ion_energy_lo, nb, q, tox, anneal_temp_c, anneal_time_s);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         updateIonEnergyDropdown();
         document.getElementById('metal-select').onchange = updateIonEnergyDropdown;
-
-        // Original chart zoom controls
-        document.getElementById('resetZoomCm').onclick  = () => cmChart   && cmChart.resetZoom();
-        document.getElementById('zoomInCm').onclick     = () => cmChart   && cmChart.zoom(1.2);
-        document.getElementById('zoomOutCm').onclick    = () => cmChart   && cmChart.zoom(0.8);
-
-        // Comparison chart zoom controls
+        document.getElementById('resetZoomCm').onclick   = () => cmChart   && cmChart.resetZoom();
+        document.getElementById('zoomInCm').onclick      = () => cmChart   && cmChart.zoom(1.2);
+        document.getElementById('zoomOutCm').onclick     = () => cmChart   && cmChart.zoom(0.8);
         document.getElementById('resetZoomComp').onclick = () => compChart && compChart.resetZoom();
         document.getElementById('zoomInComp').onclick    = () => compChart && compChart.zoom(1.2);
         document.getElementById('zoomOutComp').onclick   = () => compChart && compChart.zoom(0.8);
