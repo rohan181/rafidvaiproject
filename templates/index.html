@@ -23,6 +23,17 @@
         #junctionDiff1, #junctionDiff2 { font-size: 1.1em; padding: 2px 6px; background-color: #e7f3ff; border-radius: 3px; }
         .comp-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 8px 4px 2px; font-size: 0.82em; }
         .comp-legend-item { display: flex; align-items: center; gap: 6px; }
+        .comp-legend-header {
+            width: 100%;
+            font-size: 0.78em;
+            font-weight: 700;
+            color: #555;
+            padding: 4px 0 2px;
+            border-bottom: 1px solid #ddd;
+            margin: 4px 0 3px;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 
@@ -40,15 +51,24 @@
                             <div class="mb-3">
                                 <label for="metal-select" class="form-label">Implant Ion Species</label>
                                 <select class="form-select" id="metal-select" name="metal_type">
-                                    <option value="Arsenic">Arsenic In Silicon</option>
-                                    <option value="Phosphorus">Phosphorus In Silicon</option>
-                                    <option value="Boron">Boron In Silicon</option>
-                                    <option value="Gallium in Silicon">Gallium In Silicon</option>
-                                    <option value="Silicon in GaAs">Silicon In Gallium Arsenide</option>
-                                    <option value="Germanium in GaAs">Germanium in Gallium Arsenide</option>
-                                    <option value="Phosphorus in SiC">Phosphorus in SiC</option>
-                                    <option value="Boron in SiC">Boron in SiC</option>
-                                    <option value="Gallium in Nitrogen">Gallium in Nitrogen (GaN)</option>
+                                    <optgroup label="Silicon — P-type">
+                                        <option value="Boron">Boron in Silicon</option>
+                                        <option value="Gallium in Silicon">Gallium in Silicon</option>
+                                    </optgroup>
+                                    <optgroup label="Silicon — N-type">
+                                        <option value="Phosphorus">Phosphorus in Silicon</option>
+                                        <option value="Arsenic">Arsenic in Silicon</option>
+                                    </optgroup>
+                                    <optgroup label="Silicon Carbide — P-type">
+                                        <option value="Boron in SiC">Boron in SiC</option>
+                                    </optgroup>
+                                    <optgroup label="Silicon Carbide — N-type">
+                                        <option value="Phosphorus in SiC">Phosphorus in SiC</option>
+                                    </optgroup>
+                                    <optgroup label="Gallium Arsenide — N-type">
+                                        <option value="Silicon in GaAs">Silicon in GaAs</option>
+                                        <option value="Germanium in GaAs">Germanium in GaAs</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -283,9 +303,6 @@
             "7.00 MeV":{"rp":2.76e-4,"sig":1038e-8},"8.00 MeV":{"rp":3.00e-4,"sig":1102e-8},"9.00 MeV":{"rp":3.24e-4,"sig":1159e-8},
             "10.00 MeV":{"rp":3.47e-4,"sig":1210e-8}
         },
-
-        // Gallium in Silicon — SRIM data (Projected Range & Longitudinal Straggling, Angstroms converted to cm)
-        // Ion=Ga[31], Mass=68.93 amu, Target=Si density 2.3212 g/cm3
         'Gallium in Silicon': {
             "10.00 keV":{"rp":125e-8,"sig":48e-8},"11.00 keV":{"rp":133e-8,"sig":51e-8},
             "12.00 keV":{"rp":140e-8,"sig":53e-8},"13.00 keV":{"rp":148e-8,"sig":56e-8},
@@ -328,7 +345,6 @@
             "8.00 MeV":{"rp":3.53e-4,"sig":3118e-8},"9.00 MeV":{"rp":3.80e-4,"sig":3195e-8},
             "10.00 MeV":{"rp":4.05e-4,"sig":3262e-8}
         },
-
         'Silicon in GaAs': {
             "10.00 keV":{"rp":1.1e-06,"sig":8.8e-07},"11.00 keV":{"rp":1.18e-06,"sig":9.4e-07},
             "12.00 keV":{"rp":1.27e-06,"sig":1e-06},"13.00 keV":{"rp":1.35e-06,"sig":1.06e-06},
@@ -361,20 +377,28 @@
             "10.00 keV":{"rp":3.67e-06,"sig":1.81e-06},"15.00 keV":{"rp":5.36e-06,"sig":2.42e-06},
             "20.00 keV":{"rp":7.03e-06,"sig":2.94e-06},"30.00 keV":{"rp":1.021e-05,"sig":3.79e-06},
             "40.00 keV":{"rp":1.314e-05,"sig":4.44e-06},"50.00 keV":{"rp":1.591e-05,"sig":4.96e-06}
-        },
-        'Gallium in Nitrogen': {
-            "10.00 keV":{"rp":2.4e-06,"sig":6.5e-07},"15.00 keV":{"rp":3.15e-06,"sig":8.1e-07},
-            "20.00 keV":{"rp":3.86e-06,"sig":9.6e-07},"30.00 keV":{"rp":5.22e-06,"sig":1.25e-06},
-            "40.00 keV":{"rp":6.53e-06,"sig":1.51e-06},"50.00 keV":{"rp":7.83e-06,"sig":1.76e-06}
         }
     };
 
+    // Full group membership per substrate
     const GROUPS = {
-        Silicon: ['Arsenic', 'Phosphorus', 'Boron', 'Gallium in Silicon'],
-        GaAs:    ['Silicon in GaAs', 'Germanium in GaAs'],
-        SiC:     ['Phosphorus in SiC', 'Boron in SiC'],
-        GaN:     ['Gallium in Nitrogen']
+        Silicon: ['Boron', 'Gallium in Silicon', 'Phosphorus', 'Arsenic'],
+        SiC:     ['Boron in SiC', 'Phosphorus in SiC'],
+        GaAs:    ['Silicon in GaAs', 'Germanium in GaAs']
     };
+
+    // Carrier type per dopant
+    const TYPES = {
+        'Boron':              'P',
+        'Gallium in Silicon': 'P',
+        'Phosphorus':         'N',
+        'Arsenic':            'N',
+        'Boron in SiC':       'P',
+        'Phosphorus in SiC':  'N',
+        'Silicon in GaAs':    'N',
+        'Germanium in GaAs':  'N'
+    };
+
     const COLORS = {
         'Arsenic':            '#1565C0',
         'Phosphorus':         '#E65100',
@@ -383,8 +407,7 @@
         'Silicon in GaAs':    '#6A1B9A',
         'Germanium in GaAs':  '#00838F',
         'Phosphorus in SiC':  '#F9A825',
-        'Boron in SiC':       '#AD1457',
-        'Gallium in Nitrogen':'#4E342E'
+        'Boron in SiC':       '#AD1457'
     };
 
     const k_boltzmann = 8.617e-5;
@@ -437,16 +460,12 @@
             const o1 = document.createElement('option'); o1.value = e; o1.textContent = e; lower.appendChild(o1);
             const o2 = document.createElement('option'); o2.value = e; o2.textContent = e; upper.appendChild(o2);
         });
-        // Default: lower = first key, upper = last key
         lower.selectedIndex = 0;
         upper.selectedIndex = keys.length - 1;
-        // No guards — calculateResults swaps lo/hi automatically if needed
     }
 
     function buildOriginalChart(x_lo, N_st_lo, N_di_lo, x_hi, N_st_hi, N_di_hi, tox, anneal_time_s, anneal_temp_c, eLow, eHigh) {
-        const annealMin = (anneal_time_s / 60).toFixed(1);
         const allPos = [...N_st_lo, ...N_st_hi].filter(n => n > 0);
-
         const mk = (x, N) => x.map((v, i) => ({ x: v, y: N[i] })).filter(p => p.y > 0);
 
         if (cmChart) cmChart.destroy();
@@ -477,8 +496,12 @@
 
     function buildCompChart(selMetal, ion_energy_lo, nb, q, tox, Tc, ts) {
         const group   = getGroup(selMetal);
-        const members = GROUPS[group];
-        document.getElementById('groupLabel').textContent = group;
+        const selType = TYPES[selMetal];
+        // Only show dopants of the SAME carrier type as the selected species
+        const members = GROUPS[group].filter(m => TYPES[m] === selType);
+
+        const typeLabel = selType === 'P' ? 'P-type' : 'N-type';
+        document.getElementById('groupLabel').textContent = group + ' — ' + typeLabel;
 
         let xMin = Infinity, xMax = -Infinity;
         const mdata = [];
@@ -534,25 +557,58 @@
             }
         });
 
+        // Legend
         const leg = document.getElementById('compLegend');
         leg.innerHTML = '';
-        for (const ds of datasets) {
-            const isDash = ds.borderDash && ds.borderDash.length > 0;
+        const dm = (ts / 60).toFixed(1);
+
+        const hdr = document.createElement('div');
+        hdr.className = 'comp-legend-header';
+        hdr.textContent = (selType === 'P' ? '▲ P-type' : '▼ N-type') + ' — ' + group;
+        leg.appendChild(hdr);
+
+        for (const { m, ek } of mdata) {
+            const isSel = m === selMetal;
+            const col   = COLORS[m];
+            const eNote = ek !== ion_energy_lo ? ' @' + ek : '';
+
             const item = document.createElement('div');
             item.className = 'comp-legend-item';
             const line = document.createElement('span');
-            line.style.cssText = isDash
-                ? 'display:inline-block;width:30px;height:0;border-top:3px dashed ' + ds.borderColor + ';'
-                : 'display:inline-block;width:30px;height:' + (ds.borderWidth || 2) + 'px;background:' + ds.borderColor + ';border-radius:2px;';
+            line.style.cssText = `display:inline-block;width:28px;height:${isSel ? 4 : 3}px;background:${col};border-radius:2px;`;
             const lbl = document.createElement('span');
-            lbl.textContent = ds.label;
-            item.appendChild(line);
-            item.appendChild(lbl);
+            lbl.textContent = m + eNote;
+            if (isSel) lbl.style.fontWeight = '700';
+            item.appendChild(line); item.appendChild(lbl);
             leg.appendChild(item);
+
+            if (isSel) {
+                const item2 = document.createElement('div');
+                item2.className = 'comp-legend-item';
+                const line2 = document.createElement('span');
+                line2.style.cssText = `display:inline-block;width:28px;height:3px;`
+                    + `background:repeating-linear-gradient(90deg,${col} 0,${col} 7px,transparent 7px,transparent 11px);border-radius:2px;`;
+                const lbl2 = document.createElement('span');
+                lbl2.textContent = m + ' after ' + dm + 'min @' + Tc + '\xB0C';
+                lbl2.style.fontStyle = 'italic';
+                item2.appendChild(line2); item2.appendChild(lbl2);
+                leg.appendChild(item2);
+            }
+        }
+
+        if (allY.length) {
+            const oItem = document.createElement('div');
+            oItem.className = 'comp-legend-item';
+            const oLine = document.createElement('span');
+            oLine.style.cssText = 'display:inline-block;width:28px;height:3px;'
+                + 'background:repeating-linear-gradient(90deg,#e53935 0,#e53935 3px,transparent 3px,transparent 6px);border-radius:2px;';
+            const oLbl = document.createElement('span');
+            oLbl.textContent = 'Oxide Boundary (XOX)';
+            oItem.appendChild(oLine); oItem.appendChild(oLbl);
+            leg.appendChild(oItem);
         }
     }
 
-    // Helper to compute all derived values for one energy key
     function calcOne(metal_type, ion_energy, nb, q, tox, anneal_temp_c, anneal_time_s) {
         const ionData = metalIonData[metal_type][ion_energy];
         const rp = ionData.rp, sig = ionData.sig;
@@ -602,18 +658,18 @@
 
     function calculateResults() {
         const metal_type    = document.getElementById('metal-select').value;
-        const ion_energy_lo = document.getElementById('energy-lower').value;
-        const ion_energy_hi = document.getElementById('energy-upper').value;
+        let ion_energy_lo   = document.getElementById('energy-lower').value;
+        let ion_energy_hi   = document.getElementById('energy-upper').value;
         const nb            = parseFloat(document.getElementById('nb').value);
         const q             = parseFloat(document.getElementById('q').value);
         const tox           = parseFloat(document.getElementById('tox').value);
         const anneal_temp_c = parseFloat(document.getElementById('anneal_temp_c').value);
         const anneal_time_s = parseFloat(document.getElementById('anneal_time_s').value);
 
-        // Ensure lo <= hi in energy; swap silently if reversed
         if (parseEV(ion_energy_lo) > parseEV(ion_energy_hi)) {
-            const tmp = ion_energy_lo; ion_energy_lo = ion_energy_hi; ion_energy_hi = tmp;
+            [ion_energy_lo, ion_energy_hi] = [ion_energy_hi, ion_energy_lo];
         }
+
         const rLow  = calcOne(metal_type, ion_energy_lo, nb, q, tox, anneal_temp_c, anneal_time_s);
         const rHigh = calcOne(metal_type, ion_energy_hi, nb, q, tox, anneal_temp_c, anneal_time_s);
 
