@@ -1,718 +1,790 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrier Concentration Calculator</title>
+    <title>Ion Implanted Impurity Profile Optimization</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.js"></script>
     <style>
-        body { padding: 2rem 0; background-color: #f8f9fa; }
-        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
-        .card-header { background-color: #343a40; color: #fff; font-weight: bold; }
-        .btn-primary { background-color: #343a40; border-color: #343a40; }
-        .btn-primary:hover { background-color: #212529; border-color: #212529; }
-        .chart-container { position: relative; height: 400px; width: 100%; }
-        .zoom-buttons { text-align: center; margin-bottom: 10px; }
-        .results-section { display: none; }
-        .diffusion-section { border-left: 4px solid #ff9800; padding-left: 10px; margin-top: 10px; }
-        .alert-info { border-left: 4px solid #0dcaf0; }
-        #junctionDiff1, #junctionDiff2 { font-size: 1.1em; padding: 2px 6px; background-color: #e7f3ff; border-radius: 3px; }
-        .comp-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 8px 4px 2px; font-size: 0.82em; }
-        .comp-legend-item { display: flex; align-items: center; gap: 6px; }
-        .comp-legend-header {
-            width: 100%;
-            font-size: 0.78em;
-            font-weight: 700;
-            color: #555;
-            padding: 4px 0 2px;
-            border-bottom: 1px solid #ddd;
-            margin: 4px 0 3px;
-            letter-spacing: .4px;
-            text-transform: uppercase;
-        }
+        body{padding:2rem 0;background:#f8f9fa;}
+        .card{box-shadow:0 4px 6px rgba(0,0,0,.1);margin-bottom:2rem;}
+        .card-header{background:#343a40;color:#fff;font-weight:bold;}
+        .btn-primary{background:#343a40;border-color:#343a40;}
+        .btn-primary:hover{background:#212529;border-color:#212529;}
+        .chart-container{position:relative;height:400px;width:100%;}
+        .zoom-buttons{text-align:center;margin-bottom:10px;}
+        .results-section{display:none;}
+        .alert-info{border-left:4px solid #0dcaf0;}
+        .comp-legend{display:flex;flex-wrap:wrap;gap:10px 18px;padding:8px 4px 2px;font-size:.82em;}
+        .comp-legend-item{display:flex;align-items:center;gap:6px;}
+        .comp-legend-header{width:100%;font-size:.78em;font-weight:700;color:#555;padding:4px 0 2px;border-bottom:1px solid #ddd;margin:4px 0 3px;letter-spacing:.4px;text-transform:uppercase;}
+        .sp-bar-wrap{height:22px;background:#e9ecef;border-radius:4px;overflow:hidden;margin-top:4px;}
+        .sp-bar-elec{height:100%;background:#1565C0;float:left;transition:width .4s;}
+        .sp-bar-nucl{height:100%;background:#E65100;float:left;transition:width .4s;}
+        .sp-formula-box{background:#f0f4ff;border:1px solid #b8ccf0;border-radius:6px;padding:8px 12px;font-size:.82em;margin-bottom:8px;}
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <h2 class="text-center mb-4">Ion Implanted Impurity Profile Optimization</h2>
-        <div class="row">
+<div class="container">
+<h2 class="text-center mb-4">Ion Implanted Impurity Profile Optimization</h2>
+<div class="row">
+<div class="col-md-4">
+<div class="card">
+<div class="card-header text-center"><h4>Input Parameters</h4></div>
+<div class="card-body">
+<form>
+<div class="mb-3">
+<label class="form-label">Implant Ion Species</label>
+<select class="form-select" id="metal-select">
+<optgroup label="Silicon — P-type">
+<option value="Boron">Boron in Silicon</option>
+<option value="Gallium in Silicon">Gallium in Silicon</option>
+</optgroup>
+<optgroup label="Silicon — N-type">
+<option value="Phosphorus">Phosphorus in Silicon</option>
+<option value="Arsenic">Arsenic in Silicon</option>
+</optgroup>
+<optgroup label="Silicon Carbide — P-type">
+<option value="Boron in SiC">Boron in SiC</option>
+</optgroup>
+<optgroup label="Silicon Carbide — N-type">
+<option value="Phosphorus in SiC">Phosphorus in SiC</option>
+</optgroup>
+<optgroup label="Gallium Arsenide — N-type">
+<option value="Silicon in GaAs">Silicon in GaAs</option>
+<option value="Germanium in GaAs">Germanium in GaAs</option>
+</optgroup>
+</select>
+</div>
+<div class="mb-3">
+<label class="form-label fw-semibold">Ion Energy Range</label>
+<div class="d-flex align-items-center gap-2 mb-1">
+<span class="text-muted" style="font-size:.8em;min-width:36px;">Lower</span>
+<select class="form-select form-select-sm" id="energy-lower"></select>
+</div>
+<div class="d-flex align-items-center gap-2">
+<span class="text-muted" style="font-size:.8em;min-width:36px;">Upper</span>
+<select class="form-select form-select-sm" id="energy-upper"></select>
+</div>
+<small class="form-text text-muted">Profiles for both bounds are plotted.</small>
+</div>
+<div class="mb-3"><label class="form-label">Substrate Concentration (cm&#x207B;&#xB3;)</label><input type="number" class="form-control" id="nb" value="1e15" step="any"></div>
+<div class="mb-3"><label class="form-label">Ion Dose Charge (cm&#x207B;&#xB2;)</label><input type="number" class="form-control" id="q" value="1e12" step="any"></div>
+<div class="mb-3"><label class="form-label">Oxide Thickness (cm)</label><input type="number" class="form-control" id="tox" value="0.5e-5" step="any"></div>
+<div class="card mb-3">
+<div class="card-header bg-warning text-dark">Diffusion Parameters After Annealing</div>
+<div class="card-body">
+<div class="mb-3"><label class="form-label">Anneal Time (seconds)</label><input type="number" class="form-control" id="anneal_time_s" value="50" min="1" max="7200" step="1"><small class="form-text text-muted">Range: 1 to 7200 s (2 hrs)</small></div>
+<div class="mb-3"><label class="form-label">Anneal Temperature (&#xB0;C)</label><input type="number" class="form-control" id="anneal_temp_c" value="1000" min="700" max="1200" step="50"><small class="form-text text-muted">Range: 700&#xB0;C to 1200&#xB0;C</small></div>
+</div>
+</div>
+<div class="d-grid"><button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate</button></div>
+</form>
+</div>
+</div>
+</div>
 
-            <!-- Input Form -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header text-center"><h4>Input Parameters</h4></div>
-                    <div class="card-body">
-                        <form method="post">
-                            <div class="mb-3">
-                                <label for="metal-select" class="form-label">Implant Ion Species</label>
-                                <select class="form-select" id="metal-select" name="metal_type">
-                                    <optgroup label="Silicon — P-type">
-                                        <option value="Boron">Boron in Silicon</option>
-                                        <option value="Gallium in Silicon">Gallium in Silicon</option>
-                                    </optgroup>
-                                    <optgroup label="Silicon — N-type">
-                                        <option value="Phosphorus">Phosphorus in Silicon</option>
-                                        <option value="Arsenic">Arsenic in Silicon</option>
-                                    </optgroup>
-                                    <optgroup label="Silicon Carbide — P-type">
-                                        <option value="Boron in SiC">Boron in SiC</option>
-                                    </optgroup>
-                                    <optgroup label="Silicon Carbide — N-type">
-                                        <option value="Phosphorus in SiC">Phosphorus in SiC</option>
-                                    </optgroup>
-                                    <optgroup label="Gallium Arsenide — N-type">
-                                        <option value="Silicon in GaAs">Silicon in GaAs</option>
-                                        <option value="Germanium in GaAs">Germanium in GaAs</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Ion Energy Range</label>
-                                <div class="d-flex align-items-center gap-2 mb-1">
-                                    <span class="text-muted" style="font-size:0.8em;min-width:36px;">Lower</span>
-                                    <select class="form-select form-select-sm" id="energy-lower" name="ion_energy_lower"></select>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="text-muted" style="font-size:0.8em;min-width:36px;">Upper</span>
-                                    <select class="form-select form-select-sm" id="energy-upper" name="ion_energy_upper"></select>
-                                </div>
-                                <small class="form-text text-muted">Profiles for both bounds are plotted.</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="nb" class="form-label">Substrate Concentration (cm&#x207B;&#xB3;)</label>
-                                <input type="number" class="form-control" id="nb" name="nb" value="1e15" step="any">
-                            </div>
-                            <div class="mb-3">
-                                <label for="q" class="form-label">Ion Dose Charge (cm&#x207B;&#xB2;)</label>
-                                <input type="number" class="form-control" id="q" name="q" value="1e12" step="any">
-                            </div>
-                            <div class="mb-3">
-                                <label for="tox" class="form-label">Oxide Thickness (cm)</label>
-                                <input type="number" class="form-control" id="tox" name="tox" value="0.5e-5" step="any">
-                            </div>
-                            <div class="card mb-3">
-                                <div class="card-header bg-warning text-dark">Diffusion Parameters After Annealing</div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label for="anneal_time_s" class="form-label">Anneal Time (seconds)</label>
-                                        <input type="number" class="form-control" id="anneal_time_s" value="50" min="1" max="7200" step="1">
-                                        <small class="form-text text-muted">Range: 1 to 7200 seconds (2 hours)</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="anneal_temp_c" class="form-label">Anneal Temperature (&#xB0;C)</label>
-                                        <input type="number" class="form-control" id="anneal_temp_c" value="1000" min="700" max="1200" step="50">
-                                        <small class="form-text text-muted">Range: 700&#xB0;C to 1200&#xB0;C</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-grid">
-                                <button type="button" class="btn btn-primary" onclick="calculateResults()">Calculate</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+<div class="col-md-8 results-section" id="resultsSection">
 
-            <!-- Results -->
-            <div class="col-md-8 results-section" id="resultsSection">
-                <div class="card mb-4">
-                    <div class="card-header">Energy Range Parameters</div>
-                    <div class="card-body p-2">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered mb-0" style="font-size:0.85em;">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Parameter</th>
-                                        <th class="text-center" style="color:#4fc3f7;">Lower Energy</th>
-                                        <th class="text-center" style="color:#ff8f00;">Upper Energy</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td><strong>Ion Species</strong></td><td colspan="2" class="text-center"><span id="metalType"></span></td></tr>
-                                    <tr><td><strong>Ion Energy</strong></td><td id="ionEnergyLow" class="text-center"></td><td id="ionEnergyHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>Rp (cm)</strong></td><td id="ionRPLow" class="text-center"></td><td id="ionRPHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>&#x3C3;&#x2080; (cm)</strong></td><td id="ionSigLow" class="text-center"></td><td id="ionSigHigh" class="text-center"></td></tr>
-                                    <tr class="table-warning"><td colspan="3" class="text-center fw-bold">After Annealing — <span id="annealTime"></span>s (<span id="annealTimeMin"></span> min) @ <span id="annealTemp"></span>&#xB0;C</td></tr>
-                                    <tr><td><strong>D (cm&#xB2;/s)</strong></td><td id="diffCoeffLow" class="text-center"></td><td id="diffCoeffHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>&#x3C3; diffused (cm)</strong></td><td id="sigAfterDiffLow" class="text-center"></td><td id="sigAfterDiffHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>Rp&#x2032; (cm)</strong></td><td id="rpPrimeLow" class="text-center"></td><td id="rpPrimeHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>&#x394;Rp (cm)</strong></td><td id="deltaRpLow" class="text-center"></td><td id="deltaRpHigh" class="text-center"></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+<!-- Energy Range Parameters -->
+<div class="card mb-4">
+<div class="card-header">Energy Range Parameters</div>
+<div class="card-body p-2">
+<table class="table table-sm table-bordered mb-0" style="font-size:.85em;">
+<thead class="table-dark"><tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower Energy</th><th class="text-center" style="color:#ff8f00;">Upper Energy</th></tr></thead>
+<tbody>
+<tr><td><strong>Ion Species</strong></td><td colspan="2" class="text-center"><span id="metalType"></span></td></tr>
+<tr><td><strong>Ion Energy</strong></td><td id="ionEnergyLow" class="text-center"></td><td id="ionEnergyHigh" class="text-center"></td></tr>
+<tr><td><strong>Rp (cm)</strong></td><td id="ionRPLow" class="text-center"></td><td id="ionRPHigh" class="text-center"></td></tr>
+<tr><td><strong>&#x3C3;&#x2080; (cm)</strong></td><td id="ionSigLow" class="text-center"></td><td id="ionSigHigh" class="text-center"></td></tr>
+<tr class="table-warning"><td colspan="3" class="text-center fw-bold">After Annealing — <span id="annealTime"></span>s (<span id="annealTimeMin"></span> min) @ <span id="annealTemp"></span>&#xB0;C</td></tr>
+<tr><td><strong>D (cm&#xB2;/s)</strong></td><td id="diffCoeffLow" class="text-center"></td><td id="diffCoeffHigh" class="text-center"></td></tr>
+<tr><td><strong>&#x3C3; diffused (cm)</strong></td><td id="sigAfterDiffLow" class="text-center"></td><td id="sigAfterDiffHigh" class="text-center"></td></tr>
+<tr><td><strong>Rp&#x2032; (cm)</strong></td><td id="rpPrimeLow" class="text-center"></td><td id="rpPrimeHigh" class="text-center"></td></tr>
+<tr><td><strong>&#x394;Rp (cm)</strong></td><td id="deltaRpLow" class="text-center"></td><td id="deltaRpHigh" class="text-center"></td></tr>
+</tbody>
+</table>
+</div>
+</div>
 
-                <div class="card mb-4">
-                    <div class="card-header">N(x,t) vs. x (cm) &#x2014; Lower &amp; Upper Energy: As-implanted vs After Diffusion</div>
-                    <div class="card-body">
-                        <div class="chart-container"><canvas id="cmChart"></canvas></div>
-                        <div class="zoom-buttons">
-                            <button id="resetZoomCm" class="btn btn-sm btn-secondary">Reset Zoom</button>
-                            <button id="zoomInCm" class="btn btn-sm btn-secondary">Zoom In</button>
-                            <button id="zoomOutCm" class="btn btn-sm btn-secondary">Zoom Out</button>
-                        </div>
-                    </div>
-                </div>
+<!-- STOPPING POWER ANALYSIS -->
+<div class="card mb-4" style="border-left:4px solid #1565C0;">
+<div class="card-header" style="background:#1a237e;">Stopping Power Analysis &nbsp;<small class="fw-normal" style="opacity:.75;">S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp; MeV/(mg/cm²)</small></div>
+<div class="card-body p-2">
+<div class="sp-formula-box">
+<strong>Formula (SRIM PDF):</strong>&nbsp;
+S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp;
+%Electronic = S<sub>e</sub>/(S<sub>e</sub>+S<sub>n</sub>) &times; 100 &nbsp;|&nbsp;
+%Nuclear = S<sub>n</sub>/(S<sub>e</sub>+S<sub>n</sub>) &times; 100
+</div>
+<table class="table table-sm table-bordered mb-2" style="font-size:.85em;">
+<thead class="table-dark"><tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower E</th><th class="text-center" style="color:#ff8f00;">Upper E</th></tr></thead>
+<tbody>
+<tr><td><strong>S<sub>e</sub> — Electronic (MeV/mg/cm²)</strong></td><td id="seLow" class="text-center"></td><td id="seHigh" class="text-center"></td></tr>
+<tr><td><strong>S<sub>n</sub> — Nuclear (MeV/mg/cm²)</strong></td><td id="snLow" class="text-center"></td><td id="snHigh" class="text-center"></td></tr>
+<tr class="table-info"><td><strong>S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub></strong></td><td id="stotalLow" class="text-center fw-bold"></td><td id="stotalHigh" class="text-center fw-bold"></td></tr>
+<tr><td><strong>% Electronic</strong></td><td id="pctElecLow" class="text-center"></td><td id="pctElecHigh" class="text-center"></td></tr>
+<tr><td><strong>% Nuclear</strong></td><td id="pctNuclLow" class="text-center"></td><td id="pctNuclHigh" class="text-center"></td></tr>
+<tr><td><strong>Dominant Mechanism</strong></td><td id="domLow" class="text-center fw-bold"></td><td id="domHigh" class="text-center fw-bold"></td></tr>
+</tbody>
+</table>
+<div class="row px-2">
+<div class="col-6">
+<small class="text-muted d-block mb-1">Lower E — stopping fraction</small>
+<div class="sp-bar-wrap"><div class="sp-bar-elec" id="barElecLow"></div><div class="sp-bar-nucl" id="barNuclLow"></div></div>
+<small><span style="color:#1565C0;">&#9632;</span> Electronic &nbsp; <span style="color:#E65100;">&#9632;</span> Nuclear</small>
+</div>
+<div class="col-6">
+<small class="text-muted d-block mb-1">Upper E — stopping fraction</small>
+<div class="sp-bar-wrap"><div class="sp-bar-elec" id="barElecHigh"></div><div class="sp-bar-nucl" id="barNuclHigh"></div></div>
+<small><span style="color:#1565C0;">&#9632;</span> Electronic &nbsp; <span style="color:#E65100;">&#9632;</span> Nuclear</small>
+</div>
+</div>
+</div>
+</div>
 
-                <div class="card mb-4">
-                    <div class="card-header">
-                        N(x,t) vs. x &#x2014; <span id="groupLabel"></span> Material Comparison
-                        <small class="fw-normal ms-2" style="opacity:0.75;">Solid = As-implanted &nbsp;|&nbsp; Dashed = After diffusion (selected only)</small>
-                    </div>
-                    <div class="card-body">
-                        <div class="comp-legend" id="compLegend"></div>
-                        <div class="chart-container mt-2"><canvas id="compChart"></canvas></div>
-                        <div class="zoom-buttons mt-2">
-                            <button id="resetZoomComp" class="btn btn-sm btn-secondary">Reset Zoom</button>
-                            <button id="zoomInComp" class="btn btn-sm btn-secondary">Zoom In</button>
-                            <button id="zoomOutComp" class="btn btn-sm btn-secondary">Zoom Out</button>
-                        </div>
-                    </div>
-                </div>
+<!-- Stopping Power Chart -->
+<div class="card mb-4">
+<div class="card-header">Stopping Power vs. Energy &mdash; S<sub>e</sub>, S<sub>n</sub>, S<sub>total</sub></div>
+<div class="card-body">
+<div class="chart-container"><canvas id="spChart"></canvas></div>
+<div class="zoom-buttons mt-2">
+<button id="resetZoomSp" class="btn btn-sm btn-secondary">Reset Zoom</button>
+<button id="zoomInSp"    class="btn btn-sm btn-secondary">Zoom In</button>
+<button id="zoomOutSp"   class="btn btn-sm btn-secondary">Zoom Out</button>
+</div>
+</div>
+</div>
 
-                <div class="card mb-4">
-                    <div class="card-header">N(x) at Oxide Thickness</div>
-                    <div class="card-body p-2">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered mb-0" style="font-size:0.85em;">
-                                <thead class="table-dark">
-                                    <tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower E</th><th class="text-center" style="color:#ff8f00;">Upper E</th></tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td><strong>XOX (cm)</strong></td><td colspan="2" class="text-center"><span id="toxValue"></span></td></tr>
-                                    <tr><td><strong>N(x) As-implanted</strong></td><td id="nxToxStaticLow" class="text-center"></td><td id="nxToxStaticHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>N(x) After Diffusion</strong></td><td id="nxToxDiffLow" class="text-center"></td><td id="nxToxDiffHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>Conc. Change (%)</strong></td><td id="concChangeLow" class="text-center"></td><td id="concChangeHigh" class="text-center"></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+<!-- N(x) Profile Chart -->
+<div class="card mb-4">
+<div class="card-header">N(x,t) vs. x (cm) &mdash; Lower &amp; Upper Energy: As-implanted vs After Diffusion</div>
+<div class="card-body">
+<div class="chart-container"><canvas id="cmChart"></canvas></div>
+<div class="zoom-buttons">
+<button id="resetZoomCm" class="btn btn-sm btn-secondary">Reset Zoom</button>
+<button id="zoomInCm"    class="btn btn-sm btn-secondary">Zoom In</button>
+<button id="zoomOutCm"   class="btn btn-sm btn-secondary">Zoom Out</button>
+</div>
+</div>
+</div>
 
-                <div class="card mb-4">
-                    <div class="card-header">Junction Depths</div>
-                    <div class="card-body p-2">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered mb-0" style="font-size:0.85em;">
-                                <thead class="table-dark">
-                                    <tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower E</th><th class="text-center" style="color:#ff8f00;">Upper E</th></tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td><strong>xj1s — As-implanted (cm)</strong></td><td id="xjStaticLow" class="text-center"></td><td id="xjStaticHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>xj1s_eff = xj1s&#x2212;XOX (cm)</strong></td><td id="xjEffStaticLow" class="text-center"></td><td id="xjEffStaticHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>xj2s — After Diffusion (cm)</strong></td><td id="xjDiffLow" class="text-center"></td><td id="xjDiffHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>xj2s_eff = xj2s&#x2212;XOX (cm)</strong></td><td id="xjEffDiffLow" class="text-center"></td><td id="xjEffDiffHigh" class="text-center"></td></tr>
-                                    <tr><td><strong>Diff1 (xj1s&#x2212;xj1s_eff)</strong></td><td id="junctionDiff1Low" class="text-center"></td><td id="junctionDiff1High" class="text-center"></td></tr>
-                                    <tr><td><strong>Diff2 (xj2s&#x2212;xj2s_eff)</strong></td><td id="junctionDiff2Low" class="text-center"></td><td id="junctionDiff2High" class="text-center"></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="alert alert-info mt-3 mb-0 p-2" style="font-size:0.82em;">
-                            Both Diff1 and Diff2 should equal XOX = <span id="toxValueJn"></span> cm
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Comparison Chart -->
+<div class="card mb-4">
+<div class="card-header">N(x,t) vs. x &mdash; <span id="groupLabel"></span> Material Comparison <small class="fw-normal ms-2" style="opacity:.75;">Solid=As-impl | Dashed=Diffused</small></div>
+<div class="card-body">
+<div class="comp-legend" id="compLegend"></div>
+<div class="chart-container mt-2"><canvas id="compChart"></canvas></div>
+<div class="zoom-buttons mt-2">
+<button id="resetZoomComp" class="btn btn-sm btn-secondary">Reset Zoom</button>
+<button id="zoomInComp"    class="btn btn-sm btn-secondary">Zoom In</button>
+<button id="zoomOutComp"   class="btn btn-sm btn-secondary">Zoom Out</button>
+</div>
+</div>
+</div>
 
-    <!-- Semiconductor Type Card -->
-    <div class="card mb-4" id="semiconductorTypeCard" style="display:none;">
-        <div class="card-header">Semiconductor Type Information</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-12">
-                    <p><strong>Semiconductor Type:</strong> <span id="semiconductorType" class="badge"></span></p>
-                    <p><strong>Temperature Threshold:</strong> 550&#xB0;C</p>
-                    <p><small class="text-muted">For Gallium Arsenide materials: Above 550&#xB0;C = n-type, Below 550&#xB0;C = p-type</small></p>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- N(x) at Oxide -->
+<div class="card mb-4">
+<div class="card-header">N(x) at Oxide Thickness</div>
+<div class="card-body p-2">
+<table class="table table-sm table-bordered mb-0" style="font-size:.85em;">
+<thead class="table-dark"><tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower E</th><th class="text-center" style="color:#ff8f00;">Upper E</th></tr></thead>
+<tbody>
+<tr><td><strong>XOX (cm)</strong></td><td colspan="2" class="text-center"><span id="toxValue"></span></td></tr>
+<tr><td><strong>N(x) As-implanted</strong></td><td id="nxToxStaticLow" class="text-center"></td><td id="nxToxStaticHigh" class="text-center"></td></tr>
+<tr><td><strong>N(x) After Diffusion</strong></td><td id="nxToxDiffLow" class="text-center"></td><td id="nxToxDiffHigh" class="text-center"></td></tr>
+<tr><td><strong>Conc. Change (%)</strong></td><td id="concChangeLow" class="text-center"></td><td id="concChangeHigh" class="text-center"></td></tr>
+</tbody>
+</table>
+</div>
+</div>
 
-    <script>
-    const metalIonData = {
-        'Arsenic': {
-            "10.00 keV":{"rp":124e-8,"sig":47e-8},"11.00 keV":{"rp":131e-8,"sig":49e-8},"12.00 keV":{"rp":139e-8,"sig":51e-8},
-            "13.00 keV":{"rp":146e-8,"sig":54e-8},"14.00 keV":{"rp":154e-8,"sig":56e-8},"15.00 keV":{"rp":161e-8,"sig":58e-8},
-            "16.00 keV":{"rp":168e-8,"sig":60e-8},"17.00 keV":{"rp":175e-8,"sig":63e-8},"18.00 keV":{"rp":182e-8,"sig":65e-8},
-            "20.00 keV":{"rp":196e-8,"sig":69e-8},"22.50 keV":{"rp":213e-8,"sig":74e-8},"25.00 keV":{"rp":230e-8,"sig":79e-8},
-            "27.50 keV":{"rp":246e-8,"sig":84e-8},"30.00 keV":{"rp":262e-8,"sig":89e-8},"32.50 keV":{"rp":278e-8,"sig":93e-8},
-            "35.00 keV":{"rp":294e-8,"sig":98e-8},"37.50 keV":{"rp":310e-8,"sig":102e-8},"40.00 keV":{"rp":326e-8,"sig":107e-8},
-            "45.00 keV":{"rp":357e-8,"sig":116e-8},"50.00 keV":{"rp":388e-8,"sig":124e-8},"55.00 keV":{"rp":419e-8,"sig":133e-8},
-            "60.00 keV":{"rp":449e-8,"sig":141e-8},"65.00 keV":{"rp":480e-8,"sig":149e-8},"70.00 keV":{"rp":510e-8,"sig":158e-8},
-            "80.00 keV":{"rp":571e-8,"sig":174e-8},"90.00 keV":{"rp":631e-8,"sig":190e-8},"100.00 keV":{"rp":692e-8,"sig":206e-8},
-            "110.00 keV":{"rp":753e-8,"sig":221e-8},"120.00 keV":{"rp":813e-8,"sig":237e-8},"130.00 keV":{"rp":875e-8,"sig":252e-8},
-            "140.00 keV":{"rp":936e-8,"sig":267e-8},"150.00 keV":{"rp":997e-8,"sig":282e-8},"160.00 keV":{"rp":1059e-8,"sig":297e-8},
-            "170.00 keV":{"rp":1120e-8,"sig":312e-8},"180.00 keV":{"rp":1181e-8,"sig":326e-8},"200.00 keV":{"rp":1303e-8,"sig":355e-8},
-            "225.00 keV":{"rp":1456e-8,"sig":389e-8},"250.00 keV":{"rp":1610e-8,"sig":424e-8},"275.00 keV":{"rp":1766e-8,"sig":458e-8},
-            "300.00 keV":{"rp":1924e-8,"sig":491e-8},"325.00 keV":{"rp":2082e-8,"sig":525e-8},"350.00 keV":{"rp":2243e-8,"sig":557e-8},
-            "375.00 keV":{"rp":2404e-8,"sig":590e-8},"400.00 keV":{"rp":2566e-8,"sig":622e-8},"450.00 keV":{"rp":2892e-8,"sig":685e-8},
-            "500.00 keV":{"rp":3221e-8,"sig":746e-8},"550.00 keV":{"rp":3551e-8,"sig":806e-8},"600.00 keV":{"rp":3881e-8,"sig":864e-8},
-            "650.00 keV":{"rp":4213e-8,"sig":920e-8},"700.00 keV":{"rp":4544e-8,"sig":974e-8},"800.00 keV":{"rp":5206e-8,"sig":1079e-8},
-            "900.00 keV":{"rp":5864e-8,"sig":1178e-8},"1.00 MeV":{"rp":6519e-8,"sig":1271e-8},"1.10 MeV":{"rp":7168e-8,"sig":1359e-8},
-            "1.20 MeV":{"rp":7810e-8,"sig":1441e-8},"1.30 MeV":{"rp":8445e-8,"sig":1520e-8},"1.40 MeV":{"rp":9072e-8,"sig":1594e-8},
-            "1.50 MeV":{"rp":9691e-8,"sig":1664e-8},"1.60 MeV":{"rp":1.03e-4,"sig":1730e-8},"1.70 MeV":{"rp":1.09e-4,"sig":1792e-8},
-            "1.80 MeV":{"rp":1.15e-4,"sig":1852e-8},"2.00 MeV":{"rp":1.26e-4,"sig":1964e-8},"2.25 MeV":{"rp":1.40e-4,"sig":2091e-8},
-            "2.50 MeV":{"rp":1.54e-4,"sig":2202e-8},"2.75 MeV":{"rp":1.66e-4,"sig":2301e-8},"3.00 MeV":{"rp":1.79e-4,"sig":2389e-8},
-            "3.25 MeV":{"rp":1.90e-4,"sig":2467e-8},"3.50 MeV":{"rp":2.02e-4,"sig":2538e-8},"3.75 MeV":{"rp":2.13e-4,"sig":2601e-8},
-            "4.00 MeV":{"rp":2.23e-4,"sig":2659e-8},"4.50 MeV":{"rp":2.43e-4,"sig":2766e-8},"5.00 MeV":{"rp":2.62e-4,"sig":2857e-8},
-            "5.50 MeV":{"rp":2.79e-4,"sig":2934e-8},"6.00 MeV":{"rp":2.96e-4,"sig":3001e-8},"6.50 MeV":{"rp":3.12e-4,"sig":3060e-8},
-            "7.00 MeV":{"rp":3.27e-4,"sig":3113e-8},"8.00 MeV":{"rp":3.56e-4,"sig":3215e-8},"9.00 MeV":{"rp":3.83e-4,"sig":3299e-8},
-            "10.00 MeV":{"rp":4.08e-4,"sig":3372e-8}
-        },
-        'Phosphorus': {
-            "10.00 keV":{"rp":169e-8,"sig":60e-8},"15.00 keV":{"rp":235e-8,"sig":80e-8},"20.00 keV":{"rp":300e-8,"sig":98e-8},
-            "30.00 keV":{"rp":429e-8,"sig":133e-8},"40.00 keV":{"rp":559e-8,"sig":166e-8},"50.00 keV":{"rp":690e-8,"sig":198e-8},
-            "60.00 keV":{"rp":822e-8,"sig":230e-8},"80.00 keV":{"rp":1084e-8,"sig":292e-8},"100.00 keV":{"rp":1342e-8,"sig":351e-8},
-            "150.00 keV":{"rp":1979e-8,"sig":489e-8},"200.00 keV":{"rp":2612e-8,"sig":615e-8},"250.00 keV":{"rp":3242e-8,"sig":732e-8},
-            "300.00 keV":{"rp":3864e-8,"sig":843e-8},"400.00 keV":{"rp":5069e-8,"sig":1045e-8},"500.00 keV":{"rp":6207e-8,"sig":1223e-8},
-            "600.00 keV":{"rp":7272e-8,"sig":1378e-8},"700.00 keV":{"rp":8266e-8,"sig":1514e-8},"800.00 keV":{"rp":9194e-8,"sig":1632e-8},
-            "900.00 keV":{"rp":1.01e-4,"sig":1737e-8},"1.00 MeV":{"rp":1.09e-4,"sig":1830e-8},"1.10 MeV":{"rp":1.17e-4,"sig":1914e-8},
-            "1.20 MeV":{"rp":1.24e-4,"sig":1989e-8},"1.30 MeV":{"rp":1.31e-4,"sig":2057e-8},"1.40 MeV":{"rp":1.38e-4,"sig":2119e-8},
-            "1.50 MeV":{"rp":1.44e-4,"sig":2175e-8},"1.60 MeV":{"rp":1.51e-4,"sig":2228e-8},"1.70 MeV":{"rp":1.57e-4,"sig":2276e-8},
-            "1.80 MeV":{"rp":1.63e-4,"sig":2322e-8},"2.00 MeV":{"rp":1.74e-4,"sig":2404e-8},"2.25 MeV":{"rp":1.87e-4,"sig":2493e-8},
-            "2.50 MeV":{"rp":2.00e-4,"sig":2572e-8},"2.75 MeV":{"rp":2.13e-4,"sig":2642e-8},"3.00 MeV":{"rp":2.24e-4,"sig":2705e-8},
-            "3.25 MeV":{"rp":2.36e-4,"sig":2763e-8},"3.50 MeV":{"rp":2.47e-4,"sig":2816e-8},"3.75 MeV":{"rp":2.58e-4,"sig":2865e-8},
-            "4.00 MeV":{"rp":2.69e-4,"sig":2910e-8},"4.50 MeV":{"rp":2.89e-4,"sig":2993e-8},"5.00 MeV":{"rp":3.09e-4,"sig":3068e-8},
-            "5.50 MeV":{"rp":3.29e-4,"sig":3135e-8},"6.00 MeV":{"rp":3.48e-4,"sig":3196e-8},"6.50 MeV":{"rp":3.67e-4,"sig":3253e-8},
-            "7.00 MeV":{"rp":3.85e-4,"sig":3306e-8},"8.00 MeV":{"rp":4.21e-4,"sig":3402e-8},"9.00 MeV":{"rp":4.55e-4,"sig":3489e-8},
-            "10.00 MeV":{"rp":4.89e-4,"sig":3567e-8}
-        },
-        'Boron': {
-            "10.00 keV":{"rp":134e-8,"sig":40e-8},"15.00 keV":{"rp":188e-8,"sig":53e-8},"20.00 keV":{"rp":243e-8,"sig":65e-8},
-            "30.00 keV":{"rp":351e-8,"sig":89e-8},"40.00 keV":{"rp":459e-8,"sig":110e-8},"50.00 keV":{"rp":567e-8,"sig":130e-8},
-            "60.00 keV":{"rp":674e-8,"sig":148e-8},"80.00 keV":{"rp":873e-8,"sig":177e-8},"100.00 keV":{"rp":1068e-8,"sig":203e-8},
-            "150.00 keV":{"rp":1556e-8,"sig":260e-8},"200.00 keV":{"rp":2037e-8,"sig":307e-8},"250.00 keV":{"rp":2504e-8,"sig":348e-8},
-            "300.00 keV":{"rp":2957e-8,"sig":383e-8},"400.00 keV":{"rp":3818e-8,"sig":440e-8},"500.00 keV":{"rp":4621e-8,"sig":488e-8},
-            "600.00 keV":{"rp":5369e-8,"sig":526e-8},"700.00 keV":{"rp":6067e-8,"sig":557e-8},"800.00 keV":{"rp":6723e-8,"sig":586e-8},
-            "900.00 keV":{"rp":7341e-8,"sig":611e-8},"1.00 MeV":{"rp":7928e-8,"sig":632e-8},"1.10 MeV":{"rp":8488e-8,"sig":650e-8},
-            "1.20 MeV":{"rp":9023e-8,"sig":666e-8},"1.30 MeV":{"rp":9537e-8,"sig":681e-8},"1.40 MeV":{"rp":1.00e-4,"sig":694e-8},
-            "1.50 MeV":{"rp":1.05e-4,"sig":705e-8},"1.60 MeV":{"rp":1.10e-4,"sig":716e-8},"1.70 MeV":{"rp":1.14e-4,"sig":726e-8},
-            "1.80 MeV":{"rp":1.19e-4,"sig":735e-8},"2.00 MeV":{"rp":1.27e-4,"sig":756e-8},"2.25 MeV":{"rp":1.37e-4,"sig":780e-8},
-            "2.50 MeV":{"rp":1.46e-4,"sig":801e-8},"2.75 MeV":{"rp":1.55e-4,"sig":820e-8},"3.00 MeV":{"rp":1.64e-4,"sig":837e-8},
-            "3.25 MeV":{"rp":1.72e-4,"sig":851e-8},"3.50 MeV":{"rp":1.80e-4,"sig":865e-8},"3.75 MeV":{"rp":1.88e-4,"sig":877e-8},
-            "4.00 MeV":{"rp":1.95e-4,"sig":888e-8},"4.50 MeV":{"rp":2.10e-4,"sig":921e-8},"5.00 MeV":{"rp":2.24e-4,"sig":949e-8},
-            "5.50 MeV":{"rp":2.38e-4,"sig":974e-8},"6.00 MeV":{"rp":2.51e-4,"sig":997e-8},"6.50 MeV":{"rp":2.63e-4,"sig":1018e-8},
-            "7.00 MeV":{"rp":2.76e-4,"sig":1038e-8},"8.00 MeV":{"rp":3.00e-4,"sig":1102e-8},"9.00 MeV":{"rp":3.24e-4,"sig":1159e-8},
-            "10.00 MeV":{"rp":3.47e-4,"sig":1210e-8}
-        },
-        'Gallium in Silicon': {
-            "10.00 keV":{"rp":125e-8,"sig":48e-8},"11.00 keV":{"rp":133e-8,"sig":51e-8},
-            "12.00 keV":{"rp":140e-8,"sig":53e-8},"13.00 keV":{"rp":148e-8,"sig":56e-8},
-            "14.00 keV":{"rp":156e-8,"sig":58e-8},"15.00 keV":{"rp":163e-8,"sig":61e-8},
-            "16.00 keV":{"rp":171e-8,"sig":63e-8},"17.00 keV":{"rp":178e-8,"sig":65e-8},
-            "18.00 keV":{"rp":185e-8,"sig":68e-8},"20.00 keV":{"rp":200e-8,"sig":72e-8},
-            "22.50 keV":{"rp":217e-8,"sig":77e-8},"25.00 keV":{"rp":235e-8,"sig":83e-8},
-            "27.50 keV":{"rp":252e-8,"sig":88e-8},"30.00 keV":{"rp":269e-8,"sig":93e-8},
-            "32.50 keV":{"rp":285e-8,"sig":98e-8},"35.00 keV":{"rp":302e-8,"sig":103e-8},
-            "37.50 keV":{"rp":319e-8,"sig":108e-8},"40.00 keV":{"rp":335e-8,"sig":113e-8},
-            "45.00 keV":{"rp":368e-8,"sig":122e-8},"50.00 keV":{"rp":400e-8,"sig":132e-8},
-            "55.00 keV":{"rp":433e-8,"sig":141e-8},"60.00 keV":{"rp":465e-8,"sig":150e-8},
-            "65.00 keV":{"rp":497e-8,"sig":159e-8},"70.00 keV":{"rp":529e-8,"sig":168e-8},
-            "80.00 keV":{"rp":593e-8,"sig":185e-8},"90.00 keV":{"rp":658e-8,"sig":203e-8},
-            "100.00 keV":{"rp":722e-8,"sig":220e-8},"110.00 keV":{"rp":787e-8,"sig":237e-8},
-            "120.00 keV":{"rp":851e-8,"sig":254e-8},"130.00 keV":{"rp":916e-8,"sig":270e-8},
-            "140.00 keV":{"rp":982e-8,"sig":287e-8},"150.00 keV":{"rp":1047e-8,"sig":303e-8},
-            "160.00 keV":{"rp":1112e-8,"sig":319e-8},"170.00 keV":{"rp":1176e-8,"sig":335e-8},
-            "180.00 keV":{"rp":1241e-8,"sig":350e-8},"200.00 keV":{"rp":1371e-8,"sig":381e-8},
-            "225.00 keV":{"rp":1534e-8,"sig":418e-8},"250.00 keV":{"rp":1699e-8,"sig":455e-8},
-            "275.00 keV":{"rp":1865e-8,"sig":492e-8},"300.00 keV":{"rp":2033e-8,"sig":528e-8},
-            "325.00 keV":{"rp":2203e-8,"sig":563e-8},"350.00 keV":{"rp":2373e-8,"sig":598e-8},
-            "375.00 keV":{"rp":2544e-8,"sig":632e-8},"400.00 keV":{"rp":2716e-8,"sig":666e-8},
-            "450.00 keV":{"rp":3061e-8,"sig":732e-8},"500.00 keV":{"rp":3407e-8,"sig":796e-8},
-            "550.00 keV":{"rp":3755e-8,"sig":858e-8},"600.00 keV":{"rp":4102e-8,"sig":918e-8},
-            "650.00 keV":{"rp":4449e-8,"sig":975e-8},"700.00 keV":{"rp":4796e-8,"sig":1031e-8},
-            "800.00 keV":{"rp":5486e-8,"sig":1138e-8},"900.00 keV":{"rp":6170e-8,"sig":1237e-8},
-            "1.00 MeV":{"rp":6847e-8,"sig":1330e-8},"1.10 MeV":{"rp":7515e-8,"sig":1417e-8},
-            "1.20 MeV":{"rp":8174e-8,"sig":1499e-8},"1.30 MeV":{"rp":8822e-8,"sig":1575e-8},
-            "1.40 MeV":{"rp":9460e-8,"sig":1647e-8},"1.50 MeV":{"rp":1.01e-4,"sig":1714e-8},
-            "1.60 MeV":{"rp":1.07e-4,"sig":1777e-8},"1.70 MeV":{"rp":1.13e-4,"sig":1837e-8},
-            "1.80 MeV":{"rp":1.19e-4,"sig":1893e-8},"2.00 MeV":{"rp":1.30e-4,"sig":1998e-8},
-            "2.25 MeV":{"rp":1.44e-4,"sig":2115e-8},"2.50 MeV":{"rp":1.57e-4,"sig":2217e-8},
-            "2.75 MeV":{"rp":1.70e-4,"sig":2306e-8},"3.00 MeV":{"rp":1.82e-4,"sig":2385e-8},
-            "3.25 MeV":{"rp":1.93e-4,"sig":2455e-8},"3.50 MeV":{"rp":2.04e-4,"sig":2518e-8},
-            "3.75 MeV":{"rp":2.15e-4,"sig":2574e-8},"4.00 MeV":{"rp":2.25e-4,"sig":2625e-8},
-            "4.50 MeV":{"rp":2.44e-4,"sig":2720e-8},"5.00 MeV":{"rp":2.62e-4,"sig":2799e-8},
-            "5.50 MeV":{"rp":2.79e-4,"sig":2868e-8},"6.00 MeV":{"rp":2.95e-4,"sig":2927e-8},
-            "6.50 MeV":{"rp":3.10e-4,"sig":2979e-8},"7.00 MeV":{"rp":3.25e-4,"sig":3026e-8},
-            "8.00 MeV":{"rp":3.53e-4,"sig":3118e-8},"9.00 MeV":{"rp":3.80e-4,"sig":3195e-8},
-            "10.00 MeV":{"rp":4.05e-4,"sig":3262e-8}
-        },
-        'Silicon in GaAs': {
-            "10.00 keV":{"rp":1.1e-06,"sig":8.8e-07},"11.00 keV":{"rp":1.18e-06,"sig":9.4e-07},
-            "12.00 keV":{"rp":1.27e-06,"sig":1e-06},"13.00 keV":{"rp":1.35e-06,"sig":1.06e-06},
-            "14.00 keV":{"rp":1.44e-06,"sig":1.12e-06},"15.00 keV":{"rp":1.52e-06,"sig":1.18e-06},
-            "16.00 keV":{"rp":1.61e-06,"sig":1.24e-06},"17.00 keV":{"rp":1.69e-06,"sig":1.29e-06},
-            "18.00 keV":{"rp":1.77e-06,"sig":1.35e-06},"20.00 keV":{"rp":1.94e-06,"sig":1.46e-06},
-            "22.50 keV":{"rp":2.14e-06,"sig":1.6e-06},"25.00 keV":{"rp":2.35e-06,"sig":1.73e-06},
-            "27.50 keV":{"rp":2.56e-06,"sig":1.85e-06},"30.00 keV":{"rp":2.76e-06,"sig":1.98e-06},
-            "32.50 keV":{"rp":2.97e-06,"sig":2.11e-06},"35.00 keV":{"rp":3.17e-06,"sig":2.23e-06},
-            "37.50 keV":{"rp":3.38e-06,"sig":2.35e-06},"40.00 keV":{"rp":3.59e-06,"sig":2.47e-06},
-            "45.00 keV":{"rp":4.0e-06,"sig":2.71e-06},"50.00 keV":{"rp":4.42e-06,"sig":2.94e-06},
-            "55.00 keV":{"rp":4.84e-06,"sig":3.17e-06},"60.00 keV":{"rp":5.26e-06,"sig":3.4e-06},
-            "65.00 keV":{"rp":5.68e-06,"sig":3.62e-06},"70.00 keV":{"rp":6.11e-06,"sig":3.84e-06},
-            "80.00 keV":{"rp":6.96e-06,"sig":4.27e-06},"90.00 keV":{"rp":7.82e-06,"sig":4.68e-06},
-            "100.00 keV":{"rp":8.68e-06,"sig":5.09e-06}
-        },
-        'Germanium in GaAs': {
-            "10.00 keV":{"rp":7.3e-07,"sig":4.5e-07},"11.00 keV":{"rp":7.8e-07,"sig":4.8e-07},
-            "12.00 keV":{"rp":8.2e-07,"sig":5e-07},"13.00 keV":{"rp":8.7e-07,"sig":5.3e-07},
-            "14.00 keV":{"rp":9.1e-07,"sig":5.5e-07},"15.00 keV":{"rp":9.6e-07,"sig":5.7e-07},
-            "16.00 keV":{"rp":1e-06,"sig":5.9e-07},"17.00 keV":{"rp":1.04e-06,"sig":6.2e-07},
-            "18.00 keV":{"rp":1.09e-06,"sig":6.4e-07},"20.00 keV":{"rp":1.17e-06,"sig":6.8e-07}
-        },
-        'Phosphorus in SiC': {
-            "10.00 keV":{"rp":1.56e-06,"sig":6.6e-07},"15.00 keV":{"rp":2.17e-06,"sig":8.8e-07},
-            "20.00 keV":{"rp":2.77e-06,"sig":1.09e-06},"30.00 keV":{"rp":3.96e-06,"sig":1.48e-06},
-            "40.00 keV":{"rp":5.16e-06,"sig":1.85e-06},"50.00 keV":{"rp":6.37e-06,"sig":2.21e-06}
-        },
-        'Boron in SiC': {
-            "10.00 keV":{"rp":3.67e-06,"sig":1.81e-06},"15.00 keV":{"rp":5.36e-06,"sig":2.42e-06},
-            "20.00 keV":{"rp":7.03e-06,"sig":2.94e-06},"30.00 keV":{"rp":1.021e-05,"sig":3.79e-06},
-            "40.00 keV":{"rp":1.314e-05,"sig":4.44e-06},"50.00 keV":{"rp":1.591e-05,"sig":4.96e-06}
-        }
-    };
+<!-- Junction Depths -->
+<div class="card mb-4">
+<div class="card-header">Junction Depths</div>
+<div class="card-body p-2">
+<table class="table table-sm table-bordered mb-0" style="font-size:.85em;">
+<thead class="table-dark"><tr><th>Parameter</th><th class="text-center" style="color:#4fc3f7;">Lower E</th><th class="text-center" style="color:#ff8f00;">Upper E</th></tr></thead>
+<tbody>
+<tr><td><strong>xj1s &mdash; As-implanted (cm)</strong></td><td id="xjStaticLow" class="text-center"></td><td id="xjStaticHigh" class="text-center"></td></tr>
+<tr><td><strong>xj1s_eff = xj1s&#x2212;XOX (cm)</strong></td><td id="xjEffStaticLow" class="text-center"></td><td id="xjEffStaticHigh" class="text-center"></td></tr>
+<tr><td><strong>xj2s &mdash; After Diffusion (cm)</strong></td><td id="xjDiffLow" class="text-center"></td><td id="xjDiffHigh" class="text-center"></td></tr>
+<tr><td><strong>xj2s_eff = xj2s&#x2212;XOX (cm)</strong></td><td id="xjEffDiffLow" class="text-center"></td><td id="xjEffDiffHigh" class="text-center"></td></tr>
+<tr><td><strong>Diff1 (xj1s&#x2212;xj1s_eff)</strong></td><td id="junctionDiff1Low" class="text-center"></td><td id="junctionDiff1High" class="text-center"></td></tr>
+<tr><td><strong>Diff2 (xj2s&#x2212;xj2s_eff)</strong></td><td id="junctionDiff2Low" class="text-center"></td><td id="junctionDiff2High" class="text-center"></td></tr>
+</tbody>
+</table>
+<div class="alert alert-info mt-3 mb-0 p-2" style="font-size:.82em;">Both Diff1 and Diff2 should equal XOX = <span id="toxValueJn"></span> cm</div>
+</div>
+</div>
 
-    // Full group membership per substrate
-    const GROUPS = {
-        Silicon: ['Boron', 'Gallium in Silicon', 'Phosphorus', 'Arsenic'],
-        SiC:     ['Boron in SiC', 'Phosphorus in SiC'],
-        GaAs:    ['Silicon in GaAs', 'Germanium in GaAs']
-    };
+</div><!-- col-md-8 -->
+</div><!-- row -->
+</div><!-- container -->
 
-    // Carrier type per dopant
-    const TYPES = {
-        'Boron':              'P',
-        'Gallium in Silicon': 'P',
-        'Phosphorus':         'N',
-        'Arsenic':            'N',
-        'Boron in SiC':       'P',
-        'Phosphorus in SiC':  'N',
-        'Silicon in GaAs':    'N',
-        'Germanium in GaAs':  'N'
-    };
+<div class="card mb-4" id="semiconductorTypeCard" style="display:none;">
+<div class="card-header">Semiconductor Type Information</div>
+<div class="card-body">
+<p><strong>Semiconductor Type:</strong> <span id="semiconductorType" class="badge"></span></p>
+<p><strong>Temperature Threshold:</strong> 550&#xB0;C</p>
+<p><small class="text-muted">For GaAs materials: Above 550&#xB0;C = n-type, Below 550&#xB0;C = p-type</small></p>
+</div>
+</div>
 
-    const COLORS = {
-        'Arsenic':            '#1565C0',
-        'Phosphorus':         '#E65100',
-        'Boron':              '#2E7D32',
-        'Gallium in Silicon': '#7B1FA2',
-        'Silicon in GaAs':    '#6A1B9A',
-        'Germanium in GaAs':  '#00838F',
-        'Phosphorus in SiC':  '#F9A825',
-        'Boron in SiC':       '#AD1457'
-    };
+<script>
+// ============================================================
+// SRIM-2008 Ion Data  |  rp & sig in cm  |  se & sn in MeV/(mg/cm²)
+//
+// Stopping Power Formulae (from PDF):
+//   S_total  = Se + Sn
+//   %Electronic = Se / (Se + Sn) × 100
+//   %Nuclear    = Sn / (Se + Sn) × 100
+// ============================================================
+const metalIonData = {
+ 'Arsenic':{
+  "10.00 keV":{"rp":124e-8,"sig":47e-8,"se":2.751e-1,"sn":4.062},
+  "11.00 keV":{"rp":131e-8,"sig":49e-8,"se":2.886e-1,"sn":4.159},
+  "12.00 keV":{"rp":139e-8,"sig":51e-8,"se":3.014e-1,"sn":4.245},
+  "13.00 keV":{"rp":146e-8,"sig":54e-8,"se":3.137e-1,"sn":4.323},
+  "14.00 keV":{"rp":154e-8,"sig":56e-8,"se":3.255e-1,"sn":4.394},
+  "15.00 keV":{"rp":161e-8,"sig":58e-8,"se":3.370e-1,"sn":4.458},
+  "16.00 keV":{"rp":168e-8,"sig":60e-8,"se":3.480e-1,"sn":4.518},
+  "17.00 keV":{"rp":175e-8,"sig":63e-8,"se":3.587e-1,"sn":4.572},
+  "18.00 keV":{"rp":182e-8,"sig":65e-8,"se":3.691e-1,"sn":4.622},
+  "20.00 keV":{"rp":196e-8,"sig":69e-8,"se":3.891e-1,"sn":4.711},
+  "22.50 keV":{"rp":213e-8,"sig":74e-8,"se":4.127e-1,"sn":4.805},
+  "25.00 keV":{"rp":230e-8,"sig":79e-8,"se":4.350e-1,"sn":4.883},
+  "27.50 keV":{"rp":246e-8,"sig":84e-8,"se":4.563e-1,"sn":4.949},
+  "30.00 keV":{"rp":262e-8,"sig":89e-8,"se":4.765e-1,"sn":5.006},
+  "32.50 keV":{"rp":278e-8,"sig":93e-8,"se":4.960e-1,"sn":5.053},
+  "35.00 keV":{"rp":294e-8,"sig":98e-8,"se":5.147e-1,"sn":5.094},
+  "37.50 keV":{"rp":310e-8,"sig":102e-8,"se":5.328e-1,"sn":5.129},
+  "40.00 keV":{"rp":326e-8,"sig":107e-8,"se":5.503e-1,"sn":5.159},
+  "45.00 keV":{"rp":357e-8,"sig":116e-8,"se":5.837e-1,"sn":5.205},
+  "50.00 keV":{"rp":388e-8,"sig":124e-8,"se":6.152e-1,"sn":5.238},
+  "55.00 keV":{"rp":419e-8,"sig":133e-8,"se":6.453e-1,"sn":5.261},
+  "60.00 keV":{"rp":449e-8,"sig":141e-8,"se":6.739e-1,"sn":5.275},
+  "65.00 keV":{"rp":480e-8,"sig":149e-8,"se":7.015e-1,"sn":5.282},
+  "70.00 keV":{"rp":510e-8,"sig":158e-8,"se":7.279e-1,"sn":5.284},
+  "80.00 keV":{"rp":571e-8,"sig":174e-8,"se":7.782e-1,"sn":5.275},
+  "90.00 keV":{"rp":631e-8,"sig":190e-8,"se":8.254e-1,"sn":5.254},
+  "100.00 keV":{"rp":692e-8,"sig":206e-8,"se":8.701e-1,"sn":5.224},
+  "110.00 keV":{"rp":753e-8,"sig":221e-8,"se":9.125e-1,"sn":5.187},
+  "120.00 keV":{"rp":813e-8,"sig":237e-8,"se":9.531e-1,"sn":5.147},
+  "130.00 keV":{"rp":875e-8,"sig":252e-8,"se":9.920e-1,"sn":5.104},
+  "140.00 keV":{"rp":936e-8,"sig":267e-8,"se":1.029,"sn":5.059},
+  "150.00 keV":{"rp":997e-8,"sig":282e-8,"se":1.067,"sn":5.012},
+  "160.00 keV":{"rp":1059e-8,"sig":297e-8,"se":1.171,"sn":4.965},
+  "170.00 keV":{"rp":1120e-8,"sig":312e-8,"se":1.256,"sn":4.917},
+  "180.00 keV":{"rp":1181e-8,"sig":326e-8,"se":1.326,"sn":4.869},
+  "200.00 keV":{"rp":1303e-8,"sig":355e-8,"se":1.435,"sn":4.774},
+  "225.00 keV":{"rp":1456e-8,"sig":389e-8,"se":1.533,"sn":4.657},
+  "250.00 keV":{"rp":1610e-8,"sig":424e-8,"se":1.609,"sn":4.544},
+  "275.00 keV":{"rp":1766e-8,"sig":458e-8,"se":1.677,"sn":4.436},
+  "300.00 keV":{"rp":1924e-8,"sig":491e-8,"se":1.743,"sn":4.332},
+  "325.00 keV":{"rp":2082e-8,"sig":525e-8,"se":1.809,"sn":4.234},
+  "350.00 keV":{"rp":2243e-8,"sig":557e-8,"se":1.876,"sn":4.139},
+  "375.00 keV":{"rp":2404e-8,"sig":590e-8,"se":1.944,"sn":4.049},
+  "400.00 keV":{"rp":2566e-8,"sig":622e-8,"se":2.013,"sn":3.964},
+  "450.00 keV":{"rp":2892e-8,"sig":685e-8,"se":2.150,"sn":3.804},
+  "500.00 keV":{"rp":3221e-8,"sig":746e-8,"se":2.285,"sn":3.659},
+  "550.00 keV":{"rp":3551e-8,"sig":806e-8,"se":2.418,"sn":3.525},
+  "600.00 keV":{"rp":3881e-8,"sig":864e-8,"se":2.547,"sn":3.403},
+  "650.00 keV":{"rp":4213e-8,"sig":920e-8,"se":2.672,"sn":3.290},
+  "700.00 keV":{"rp":4544e-8,"sig":974e-8,"se":2.793,"sn":3.186},
+  "800.00 keV":{"rp":5206e-8,"sig":1079e-8,"se":3.025,"sn":2.999},
+  "900.00 keV":{"rp":5864e-8,"sig":1178e-8,"se":3.246,"sn":2.836},
+  "1.00 MeV":{"rp":6519e-8,"sig":1271e-8,"se":3.458,"sn":2.692},
+  "1.10 MeV":{"rp":7168e-8,"sig":1359e-8,"se":3.663,"sn":2.565},
+  "1.20 MeV":{"rp":7810e-8,"sig":1441e-8,"se":3.863,"sn":2.451},
+  "1.30 MeV":{"rp":8445e-8,"sig":1520e-8,"se":4.059,"sn":2.349},
+  "1.40 MeV":{"rp":9072e-8,"sig":1594e-8,"se":4.253,"sn":2.256},
+  "1.50 MeV":{"rp":9691e-8,"sig":1664e-8,"se":4.444,"sn":2.171},
+  "1.60 MeV":{"rp":1.03e-4,"sig":1730e-8,"se":4.634,"sn":2.093},
+  "1.70 MeV":{"rp":1.09e-4,"sig":1792e-8,"se":4.823,"sn":2.022},
+  "1.80 MeV":{"rp":1.15e-4,"sig":1852e-8,"se":5.010,"sn":1.956},
+  "2.00 MeV":{"rp":1.26e-4,"sig":1964e-8,"se":5.384,"sn":1.838},
+  "2.25 MeV":{"rp":1.40e-4,"sig":2091e-8,"se":5.850,"sn":1.712},
+  "2.50 MeV":{"rp":1.54e-4,"sig":2202e-8,"se":6.313,"sn":1.604},
+  "2.75 MeV":{"rp":1.66e-4,"sig":2301e-8,"se":6.773,"sn":1.511},
+  "3.00 MeV":{"rp":1.79e-4,"sig":2389e-8,"se":7.230,"sn":1.429},
+  "3.25 MeV":{"rp":1.90e-4,"sig":2467e-8,"se":7.682,"sn":1.357},
+  "3.50 MeV":{"rp":2.02e-4,"sig":2538e-8,"se":8.128,"sn":1.293},
+  "3.75 MeV":{"rp":2.13e-4,"sig":2601e-8,"se":8.567,"sn":1.235},
+  "4.00 MeV":{"rp":2.23e-4,"sig":2659e-8,"se":8.999,"sn":1.183},
+  "4.50 MeV":{"rp":2.43e-4,"sig":2766e-8,"se":9.835,"sn":1.093},
+  "5.00 MeV":{"rp":2.62e-4,"sig":2857e-8,"se":10.63,"sn":1.016},
+  "5.50 MeV":{"rp":2.79e-4,"sig":2934e-8,"se":11.39,"sn":9.513e-1},
+  "6.00 MeV":{"rp":2.96e-4,"sig":3001e-8,"se":12.11,"sn":8.950e-1},
+  "6.50 MeV":{"rp":3.12e-4,"sig":3060e-8,"se":12.79,"sn":8.457e-1},
+  "7.00 MeV":{"rp":3.27e-4,"sig":3113e-8,"se":13.42,"sn":8.022e-1},
+  "8.00 MeV":{"rp":3.56e-4,"sig":3215e-8,"se":14.58,"sn":7.285e-1},
+  "9.00 MeV":{"rp":3.83e-4,"sig":3299e-8,"se":15.61,"sn":6.685e-1},
+  "10.00 MeV":{"rp":4.08e-4,"sig":3372e-8,"se":16.52,"sn":6.186e-1}
+ },
+ 'Boron':{
+  "10.00 keV":{"rp":400e-8,"sig":231e-8,"se":3.912e-1,"sn":3.418e-1},
+  "15.00 keV":{"rp":587e-8,"sig":310e-8,"se":4.791e-1,"sn":3.083e-1},
+  "20.00 keV":{"rp":771e-8,"sig":379e-8,"se":5.532e-1,"sn":2.809e-1},
+  "30.00 keV":{"rp":1122e-8,"sig":490e-8,"se":7.417e-1,"sn":2.398e-1},
+  "40.00 keV":{"rp":1442e-8,"sig":573e-8,"se":8.860e-1,"sn":2.105e-1},
+  "50.00 keV":{"rp":1746e-8,"sig":642e-8,"se":9.874e-1,"sn":1.885e-1},
+  "60.00 keV":{"rp":2042e-8,"sig":701e-8,"se":1.063,"sn":1.713e-1},
+  "80.00 keV":{"rp":2618e-8,"sig":802e-8,"se":1.169,"sn":1.458e-1},
+  "100.00 keV":{"rp":3180e-8,"sig":886e-8,"se":1.249,"sn":1.278e-1},
+  "150.00 keV":{"rp":4519e-8,"sig":1050e-8,"se":1.434,"sn":9.901e-2},
+  "200.00 keV":{"rp":5749e-8,"sig":1169e-8,"se":1.631,"sn":8.179e-2},
+  "250.00 keV":{"rp":6868e-8,"sig":1260e-8,"se":1.837,"sn":7.017e-2},
+  "300.00 keV":{"rp":7888e-8,"sig":1329e-8,"se":2.043,"sn":6.172e-2},
+  "400.00 keV":{"rp":9690e-8,"sig":1429e-8,"se":2.433,"sn":5.016e-2},
+  "500.00 keV":{"rp":1.13e-4,"sig":1501e-8,"se":2.774,"sn":4.255e-2},
+  "600.00 keV":{"rp":1.27e-4,"sig":1555e-8,"se":3.062,"sn":3.711e-2},
+  "700.00 keV":{"rp":1.40e-4,"sig":1597e-8,"se":3.299,"sn":3.301e-2},
+  "800.00 keV":{"rp":1.52e-4,"sig":1636e-8,"se":3.493,"sn":2.979e-2},
+  "900.00 keV":{"rp":1.64e-4,"sig":1670e-8,"se":3.649,"sn":2.719e-2},
+  "1.00 MeV":{"rp":1.75e-4,"sig":1699e-8,"se":3.775,"sn":2.505e-2},
+  "1.10 MeV":{"rp":1.86e-4,"sig":1726e-8,"se":3.875,"sn":2.325e-2},
+  "1.20 MeV":{"rp":1.97e-4,"sig":1750e-8,"se":3.955,"sn":2.170e-2},
+  "1.30 MeV":{"rp":2.08e-4,"sig":1773e-8,"se":4.018,"sn":2.037e-2},
+  "1.40 MeV":{"rp":2.18e-4,"sig":1794e-8,"se":4.067,"sn":1.921e-2},
+  "1.50 MeV":{"rp":2.29e-4,"sig":1814e-8,"se":4.105,"sn":1.818e-2},
+  "1.60 MeV":{"rp":2.39e-4,"sig":1833e-8,"se":4.134,"sn":1.726e-2},
+  "1.70 MeV":{"rp":2.49e-4,"sig":1851e-8,"se":4.156,"sn":1.644e-2},
+  "1.80 MeV":{"rp":2.60e-4,"sig":1868e-8,"se":4.171,"sn":1.570e-2},
+  "2.00 MeV":{"rp":2.80e-4,"sig":1912e-8,"se":4.188,"sn":1.442e-2},
+  "2.25 MeV":{"rp":3.06e-4,"sig":1971e-8,"se":4.189,"sn":1.310e-2},
+  "2.50 MeV":{"rp":3.31e-4,"sig":2028e-8,"se":4.178,"sn":1.202e-2},
+  "2.75 MeV":{"rp":3.57e-4,"sig":2082e-8,"se":4.159,"sn":1.112e-2},
+  "3.00 MeV":{"rp":3.83e-4,"sig":2134e-8,"se":4.135,"sn":1.035e-2},
+  "3.25 MeV":{"rp":4.09e-4,"sig":2186e-8,"se":4.108,"sn":9.691e-3},
+  "3.50 MeV":{"rp":4.35e-4,"sig":2236e-8,"se":4.080,"sn":9.114e-3},
+  "3.75 MeV":{"rp":4.61e-4,"sig":2286e-8,"se":4.051,"sn":8.607e-3},
+  "4.00 MeV":{"rp":4.88e-4,"sig":2335e-8,"se":4.022,"sn":8.157e-3},
+  "4.50 MeV":{"rp":5.41e-4,"sig":2489e-8,"se":3.964,"sn":7.394e-3},
+  "5.00 MeV":{"rp":5.96e-4,"sig":2638e-8,"se":3.909,"sn":6.769e-3},
+  "5.50 MeV":{"rp":6.51e-4,"sig":2782e-8,"se":3.855,"sn":6.249e-3},
+  "6.00 MeV":{"rp":7.07e-4,"sig":2922e-8,"se":3.804,"sn":5.807e-3},
+  "6.50 MeV":{"rp":7.64e-4,"sig":3059e-8,"se":3.755,"sn":5.428e-3},
+  "7.00 MeV":{"rp":8.22e-4,"sig":3193e-8,"se":3.707,"sn":5.098e-3},
+  "8.00 MeV":{"rp":9.39e-4,"sig":3648e-8,"se":3.618,"sn":4.551e-3},
+  "9.00 MeV":{"rp":1.059e-3,"sig":4070e-8,"se":3.533,"sn":4.117e-3},
+  "10.00 MeV":{"rp":1.182e-3,"sig":4470e-8,"se":3.453,"sn":3.763e-3}
+ },
+ 'Phosphorus':{
+  "10.00 keV":{"rp":169e-8,"sig":83e-8,"se":3.902e-1,"sn":1.868},
+  "15.00 keV":{"rp":235e-8,"sig":110e-8,"se":4.779e-1,"sn":1.904},
+  "20.00 keV":{"rp":300e-8,"sig":136e-8,"se":5.518e-1,"sn":1.899},
+  "30.00 keV":{"rp":429e-8,"sig":185e-8,"se":6.758e-1,"sn":1.846},
+  "40.00 keV":{"rp":559e-8,"sig":232e-8,"se":7.804e-1,"sn":1.775},
+  "50.00 keV":{"rp":690e-8,"sig":277e-8,"se":8.725e-1,"sn":1.703},
+  "60.00 keV":{"rp":822e-8,"sig":320e-8,"se":9.558e-1,"sn":1.633},
+  "80.00 keV":{"rp":1084e-8,"sig":399e-8,"se":1.188,"sn":1.509},
+  "100.00 keV":{"rp":1342e-8,"sig":470e-8,"se":1.376,"sn":1.403},
+  "150.00 keV":{"rp":1979e-8,"sig":626e-8,"se":1.693,"sn":1.200},
+  "200.00 keV":{"rp":2612e-8,"sig":761e-8,"se":1.914,"sn":1.054},
+  "250.00 keV":{"rp":3242e-8,"sig":882e-8,"se":2.096,"sn":9.448e-1},
+  "300.00 keV":{"rp":3864e-8,"sig":989e-8,"se":2.267,"sn":8.589e-1},
+  "400.00 keV":{"rp":5069e-8,"sig":1172e-8,"se":2.609,"sn":7.318e-1},
+  "500.00 keV":{"rp":6207e-8,"sig":1321e-8,"se":2.964,"sn":6.416e-1},
+  "600.00 keV":{"rp":7272e-8,"sig":1441e-8,"se":3.327,"sn":5.736e-1},
+  "700.00 keV":{"rp":8266e-8,"sig":1540e-8,"se":3.692,"sn":5.203e-1},
+  "800.00 keV":{"rp":9194e-8,"sig":1624e-8,"se":4.051,"sn":4.772e-1},
+  "900.00 keV":{"rp":1.01e-4,"sig":1694e-8,"se":4.401,"sn":4.415e-1},
+  "1.00 MeV":{"rp":1.09e-4,"sig":1754e-8,"se":4.740,"sn":4.114e-1},
+  "1.10 MeV":{"rp":1.17e-4,"sig":1806e-8,"se":5.064,"sn":3.856e-1},
+  "1.20 MeV":{"rp":1.24e-4,"sig":1851e-8,"se":5.375,"sn":3.632e-1},
+  "1.30 MeV":{"rp":1.31e-4,"sig":1891e-8,"se":5.671,"sn":3.436e-1},
+  "1.40 MeV":{"rp":1.38e-4,"sig":1927e-8,"se":5.952,"sn":3.262e-1},
+  "1.50 MeV":{"rp":1.44e-4,"sig":1959e-8,"se":6.219,"sn":3.107e-1},
+  "1.60 MeV":{"rp":1.51e-4,"sig":1988e-8,"se":6.472,"sn":2.967e-1},
+  "1.70 MeV":{"rp":1.57e-4,"sig":2014e-8,"se":6.711,"sn":2.841e-1},
+  "1.80 MeV":{"rp":1.63e-4,"sig":2038e-8,"se":6.939,"sn":2.727e-1},
+  "2.00 MeV":{"rp":1.74e-4,"sig":2084e-8,"se":7.358,"sn":2.526e-1},
+  "2.25 MeV":{"rp":1.87e-4,"sig":2134e-8,"se":7.825,"sn":2.317e-1},
+  "2.50 MeV":{"rp":2.00e-4,"sig":2177e-8,"se":8.236,"sn":2.143e-1},
+  "2.75 MeV":{"rp":2.13e-4,"sig":2215e-8,"se":8.601,"sn":1.996e-1},
+  "3.00 MeV":{"rp":2.24e-4,"sig":2249e-8,"se":8.927,"sn":1.870e-1},
+  "3.25 MeV":{"rp":2.36e-4,"sig":2279e-8,"se":9.220,"sn":1.760e-1},
+  "3.50 MeV":{"rp":2.47e-4,"sig":2307e-8,"se":9.484,"sn":1.663e-1},
+  "3.75 MeV":{"rp":2.58e-4,"sig":2332e-8,"se":9.726,"sn":1.578e-1},
+  "4.00 MeV":{"rp":2.69e-4,"sig":2356e-8,"se":9.946,"sn":1.501e-1},
+  "4.50 MeV":{"rp":2.89e-4,"sig":2407e-8,"se":10.34,"sn":1.371e-1},
+  "5.00 MeV":{"rp":3.09e-4,"sig":2453e-8,"se":10.68,"sn":1.263e-1},
+  "5.50 MeV":{"rp":3.29e-4,"sig":2494e-8,"se":10.97,"sn":1.172e-1},
+  "6.00 MeV":{"rp":3.48e-4,"sig":2532e-8,"se":11.24,"sn":1.094e-1},
+  "6.50 MeV":{"rp":3.67e-4,"sig":2567e-8,"se":11.48,"sn":1.027e-1},
+  "7.00 MeV":{"rp":3.85e-4,"sig":2599e-8,"se":11.70,"sn":9.685e-2},
+  "8.00 MeV":{"rp":4.21e-4,"sig":2682e-8,"se":12.08,"sn":8.705e-2},
+  "9.00 MeV":{"rp":4.55e-4,"sig":2757e-8,"se":12.40,"sn":7.919e-2},
+  "10.00 MeV":{"rp":4.89e-4,"sig":2825e-8,"se":12.69,"sn":7.273e-2}
+ },
+ 'Gallium in Silicon':{
+  "10.00 keV":{"rp":125e-8,"sig":48e-8,"se":2.913e-1,"sn":3.879},
+  "11.00 keV":{"rp":133e-8,"sig":51e-8,"se":3.055e-1,"sn":3.966},
+  "12.00 keV":{"rp":140e-8,"sig":53e-8,"se":3.191e-1,"sn":4.043},
+  "13.00 keV":{"rp":148e-8,"sig":56e-8,"se":3.322e-1,"sn":4.113},
+  "14.00 keV":{"rp":156e-8,"sig":58e-8,"se":3.447e-1,"sn":4.176},
+  "15.00 keV":{"rp":163e-8,"sig":61e-8,"se":3.568e-1,"sn":4.233},
+  "16.00 keV":{"rp":171e-8,"sig":63e-8,"se":3.685e-1,"sn":4.285},
+  "17.00 keV":{"rp":178e-8,"sig":65e-8,"se":3.798e-1,"sn":4.332},
+  "18.00 keV":{"rp":185e-8,"sig":68e-8,"se":3.909e-1,"sn":4.376},
+  "20.00 keV":{"rp":200e-8,"sig":72e-8,"se":4.120e-1,"sn":4.453},
+  "22.50 keV":{"rp":217e-8,"sig":77e-8,"se":4.370e-1,"sn":4.533},
+  "25.00 keV":{"rp":235e-8,"sig":83e-8,"se":4.606e-1,"sn":4.599},
+  "27.50 keV":{"rp":252e-8,"sig":88e-8,"se":4.831e-1,"sn":4.654},
+  "30.00 keV":{"rp":269e-8,"sig":93e-8,"se":5.046e-1,"sn":4.700},
+  "32.50 keV":{"rp":285e-8,"sig":98e-8,"se":5.252e-1,"sn":4.738},
+  "35.00 keV":{"rp":302e-8,"sig":103e-8,"se":5.450e-1,"sn":4.770},
+  "37.50 keV":{"rp":319e-8,"sig":108e-8,"se":5.641e-1,"sn":4.797},
+  "40.00 keV":{"rp":335e-8,"sig":113e-8,"se":5.827e-1,"sn":4.819},
+  "45.00 keV":{"rp":368e-8,"sig":122e-8,"se":6.180e-1,"sn":4.851},
+  "50.00 keV":{"rp":400e-8,"sig":132e-8,"se":6.514e-1,"sn":4.872},
+  "55.00 keV":{"rp":433e-8,"sig":141e-8,"se":6.832e-1,"sn":4.883},
+  "60.00 keV":{"rp":465e-8,"sig":150e-8,"se":7.136e-1,"sn":4.887},
+  "65.00 keV":{"rp":497e-8,"sig":159e-8,"se":7.427e-1,"sn":4.885},
+  "70.00 keV":{"rp":529e-8,"sig":168e-8,"se":7.708e-1,"sn":4.879},
+  "80.00 keV":{"rp":593e-8,"sig":185e-8,"se":8.240e-1,"sn":4.856},
+  "90.00 keV":{"rp":658e-8,"sig":203e-8,"se":8.740e-1,"sn":4.823},
+  "100.00 keV":{"rp":722e-8,"sig":220e-8,"se":9.213e-1,"sn":4.784},
+  "110.00 keV":{"rp":787e-8,"sig":237e-8,"se":9.662e-1,"sn":4.740},
+  "120.00 keV":{"rp":851e-8,"sig":254e-8,"se":1.009,"sn":4.693},
+  "130.00 keV":{"rp":916e-8,"sig":270e-8,"se":1.050,"sn":4.644},
+  "140.00 keV":{"rp":982e-8,"sig":287e-8,"se":1.106,"sn":4.594},
+  "150.00 keV":{"rp":1047e-8,"sig":303e-8,"se":1.207,"sn":4.544},
+  "160.00 keV":{"rp":1112e-8,"sig":319e-8,"se":1.289,"sn":4.493},
+  "170.00 keV":{"rp":1176e-8,"sig":335e-8,"se":1.358,"sn":4.443},
+  "180.00 keV":{"rp":1241e-8,"sig":350e-8,"se":1.416,"sn":4.393},
+  "200.00 keV":{"rp":1371e-8,"sig":381e-8,"se":1.509,"sn":4.295},
+  "225.00 keV":{"rp":1534e-8,"sig":418e-8,"se":1.601,"sn":4.177},
+  "250.00 keV":{"rp":1699e-8,"sig":455e-8,"se":1.680,"sn":4.065},
+  "275.00 keV":{"rp":1865e-8,"sig":492e-8,"se":1.756,"sn":3.958},
+  "300.00 keV":{"rp":2033e-8,"sig":528e-8,"se":1.831,"sn":3.857},
+  "325.00 keV":{"rp":2203e-8,"sig":563e-8,"se":1.906,"sn":3.761},
+  "350.00 keV":{"rp":2373e-8,"sig":598e-8,"se":1.981,"sn":3.670},
+  "375.00 keV":{"rp":2544e-8,"sig":632e-8,"se":2.057,"sn":3.584},
+  "400.00 keV":{"rp":2716e-8,"sig":666e-8,"se":2.131,"sn":3.503},
+  "450.00 keV":{"rp":3061e-8,"sig":732e-8,"se":2.278,"sn":3.352},
+  "500.00 keV":{"rp":3407e-8,"sig":796e-8,"se":2.420,"sn":3.215},
+  "550.00 keV":{"rp":3755e-8,"sig":858e-8,"se":2.557,"sn":3.091},
+  "600.00 keV":{"rp":4102e-8,"sig":918e-8,"se":2.690,"sn":2.977},
+  "650.00 keV":{"rp":4449e-8,"sig":975e-8,"se":2.818,"sn":2.873},
+  "700.00 keV":{"rp":4796e-8,"sig":1031e-8,"se":2.943,"sn":2.778},
+  "800.00 keV":{"rp":5486e-8,"sig":1138e-8,"se":3.182,"sn":2.607},
+  "900.00 keV":{"rp":6170e-8,"sig":1237e-8,"se":3.411,"sn":2.459},
+  "1.00 MeV":{"rp":6847e-8,"sig":1330e-8,"se":3.633,"sn":2.330},
+  "1.10 MeV":{"rp":7515e-8,"sig":1417e-8,"se":3.850,"sn":2.215},
+  "1.20 MeV":{"rp":8174e-8,"sig":1499e-8,"se":4.063,"sn":2.114},
+  "1.30 MeV":{"rp":8822e-8,"sig":1575e-8,"se":4.274,"sn":2.022},
+  "1.40 MeV":{"rp":9460e-8,"sig":1647e-8,"se":4.482,"sn":1.939},
+  "1.50 MeV":{"rp":1.01e-4,"sig":1714e-8,"se":4.689,"sn":1.864},
+  "1.60 MeV":{"rp":1.07e-4,"sig":1777e-8,"se":4.895,"sn":1.796},
+  "1.70 MeV":{"rp":1.13e-4,"sig":1837e-8,"se":5.101,"sn":1.733},
+  "1.80 MeV":{"rp":1.19e-4,"sig":1893e-8,"se":5.306,"sn":1.675},
+  "2.00 MeV":{"rp":1.30e-4,"sig":1998e-8,"se":5.713,"sn":1.571},
+  "2.25 MeV":{"rp":1.44e-4,"sig":2115e-8,"se":6.219,"sn":1.460},
+  "2.50 MeV":{"rp":1.57e-4,"sig":2217e-8,"se":6.721,"sn":1.366},
+  "2.75 MeV":{"rp":1.70e-4,"sig":2306e-8,"se":7.216,"sn":1.285},
+  "3.00 MeV":{"rp":1.82e-4,"sig":2385e-8,"se":7.704,"sn":1.215},
+  "3.25 MeV":{"rp":1.93e-4,"sig":2455e-8,"se":8.183,"sn":1.152},
+  "3.50 MeV":{"rp":2.04e-4,"sig":2518e-8,"se":8.652,"sn":1.097},
+  "3.75 MeV":{"rp":2.15e-4,"sig":2574e-8,"se":9.111,"sn":1.047},
+  "4.00 MeV":{"rp":2.25e-4,"sig":2625e-8,"se":9.557,"sn":1.002},
+  "4.50 MeV":{"rp":2.44e-4,"sig":2720e-8,"se":10.41,"sn":9.240e-1},
+  "5.00 MeV":{"rp":2.62e-4,"sig":2799e-8,"se":11.22,"sn":8.586e-1},
+  "5.50 MeV":{"rp":2.79e-4,"sig":2868e-8,"se":11.97,"sn":8.029e-1},
+  "6.00 MeV":{"rp":2.95e-4,"sig":2927e-8,"se":12.68,"sn":7.547e-1},
+  "6.50 MeV":{"rp":3.10e-4,"sig":2979e-8,"se":13.34,"sn":7.126e-1},
+  "7.00 MeV":{"rp":3.25e-4,"sig":3026e-8,"se":13.95,"sn":6.754e-1},
+  "8.00 MeV":{"rp":3.53e-4,"sig":3118e-8,"se":15.06,"sn":6.127e-1},
+  "9.00 MeV":{"rp":3.80e-4,"sig":3195e-8,"se":16.02,"sn":5.617e-1},
+  "10.00 MeV":{"rp":4.05e-4,"sig":3262e-8,"se":16.86,"sn":5.192e-1}
+ },
+ 'Silicon in GaAs':{
+  "10.00 keV":{"rp":110e-8,"sig":88e-8,"se":1.923e-1,"sn":7.171e-1},
+  "11.00 keV":{"rp":118e-8,"sig":94e-8,"se":2.017e-1,"sn":7.260e-1},
+  "12.00 keV":{"rp":127e-8,"sig":100e-8,"se":2.107e-1,"sn":7.335e-1},
+  "13.00 keV":{"rp":135e-8,"sig":106e-8,"se":2.193e-1,"sn":7.398e-1},
+  "14.00 keV":{"rp":144e-8,"sig":112e-8,"se":2.275e-1,"sn":7.451e-1},
+  "15.00 keV":{"rp":152e-8,"sig":118e-8,"se":2.355e-1,"sn":7.495e-1},
+  "16.00 keV":{"rp":161e-8,"sig":124e-8,"se":2.433e-1,"sn":7.532e-1},
+  "17.00 keV":{"rp":169e-8,"sig":129e-8,"se":2.507e-1,"sn":7.563e-1},
+  "18.00 keV":{"rp":177e-8,"sig":135e-8,"se":2.580e-1,"sn":7.588e-1},
+  "20.00 keV":{"rp":194e-8,"sig":146e-8,"se":2.720e-1,"sn":7.625e-1},
+  "22.50 keV":{"rp":214e-8,"sig":160e-8,"se":2.885e-1,"sn":7.651e-1},
+  "25.00 keV":{"rp":235e-8,"sig":173e-8,"se":3.041e-1,"sn":7.660e-1},
+  "27.50 keV":{"rp":256e-8,"sig":185e-8,"se":3.189e-1,"sn":7.655e-1},
+  "30.00 keV":{"rp":276e-8,"sig":198e-8,"se":3.331e-1,"sn":7.641e-1},
+  "32.50 keV":{"rp":297e-8,"sig":211e-8,"se":3.467e-1,"sn":7.619e-1},
+  "35.00 keV":{"rp":317e-8,"sig":223e-8,"se":3.598e-1,"sn":7.591e-1},
+  "37.50 keV":{"rp":338e-8,"sig":235e-8,"se":3.724e-1,"sn":7.559e-1},
+  "40.00 keV":{"rp":359e-8,"sig":247e-8,"se":3.846e-1,"sn":7.522e-1},
+  "45.00 keV":{"rp":400e-8,"sig":271e-8,"se":4.079e-1,"sn":7.442e-1},
+  "50.00 keV":{"rp":442e-8,"sig":294e-8,"se":4.300e-1,"sn":7.354e-1},
+  "55.00 keV":{"rp":484e-8,"sig":317e-8,"se":4.510e-1,"sn":7.262e-1},
+  "60.00 keV":{"rp":526e-8,"sig":340e-8,"se":4.660e-1,"sn":7.167e-1},
+  "65.00 keV":{"rp":568e-8,"sig":362e-8,"se":4.830e-1,"sn":7.072e-1},
+  "70.00 keV":{"rp":611e-8,"sig":384e-8,"se":5.019e-1,"sn":6.977e-1},
+  "80.00 keV":{"rp":696e-8,"sig":427e-8,"se":5.410e-1,"sn":6.791e-1},
+  "90.00 keV":{"rp":782e-8,"sig":468e-8,"se":5.784e-1,"sn":6.610e-1},
+  "100.00 keV":{"rp":868e-8,"sig":509e-8,"se":6.125e-1,"sn":6.438e-1}
+ },
+ 'Germanium in GaAs':{
+  "10.00 keV":{"rp":73e-8,"sig":45e-8,"se":9.872e-2,"sn":2.064},
+  "11.00 keV":{"rp":78e-8,"sig":48e-8,"se":1.035e-1,"sn":2.119},
+  "12.00 keV":{"rp":82e-8,"sig":50e-8,"se":1.081e-1,"sn":2.169},
+  "13.00 keV":{"rp":87e-8,"sig":53e-8,"se":1.126e-1,"sn":2.214},
+  "14.00 keV":{"rp":91e-8,"sig":55e-8,"se":1.168e-1,"sn":2.255},
+  "15.00 keV":{"rp":96e-8,"sig":57e-8,"se":1.209e-1,"sn":2.293},
+  "16.00 keV":{"rp":100e-8,"sig":59e-8,"se":1.249e-1,"sn":2.328},
+  "17.00 keV":{"rp":104e-8,"sig":62e-8,"se":1.287e-1,"sn":2.361},
+  "18.00 keV":{"rp":109e-8,"sig":64e-8,"se":1.324e-1,"sn":2.391},
+  "20.00 keV":{"rp":117e-8,"sig":68e-8,"se":1.396e-1,"sn":2.445}
+ },
+ 'Phosphorus in SiC':{
+  "10.00 keV":{"rp":156e-8,"sig":66e-8,"se":4.969e-1,"sn":2.170},
+  "15.00 keV":{"rp":217e-8,"sig":88e-8,"se":6.085e-1,"sn":2.188},
+  "20.00 keV":{"rp":277e-8,"sig":109e-8,"se":7.027e-1,"sn":2.165},
+  "30.00 keV":{"rp":396e-8,"sig":148e-8,"se":8.606e-1,"sn":2.079},
+  "40.00 keV":{"rp":516e-8,"sig":185e-8,"se":9.937e-1,"sn":1.981},
+  "50.00 keV":{"rp":637e-8,"sig":221e-8,"se":1.111,"sn":1.888}
+ },
+ 'Boron in SiC':{
+  "10.00 keV":{"rp":367e-8,"sig":181e-8,"se":4.981e-1,"sn":4.018e-1},
+  "15.00 keV":{"rp":536e-8,"sig":242e-8,"se":6.100e-1,"sn":3.552e-1},
+  "20.00 keV":{"rp":703e-8,"sig":294e-8,"se":7.044e-1,"sn":3.194e-1},
+  "30.00 keV":{"rp":1021e-8,"sig":379e-8,"se":8.894e-1,"sn":2.681e-1},
+  "40.00 keV":{"rp":1314e-8,"sig":444e-8,"se":1.056,"sn":2.329e-1},
+  "50.00 keV":{"rp":1591e-8,"sig":496e-8,"se":1.182,"sn":2.070e-1}
+ }
+};
 
-    const k_boltzmann = 8.617e-5;
-    const D0 = 10.5;
-    const Ea_Arsenic = 4.05;
-    const Ea_Phosphorus = 3.66;
+const GROUPS={Silicon:['Boron','Gallium in Silicon','Phosphorus','Arsenic'],SiC:['Boron in SiC','Phosphorus in SiC'],GaAs:['Silicon in GaAs','Germanium in GaAs']};
+const TYPES={'Boron':'P','Gallium in Silicon':'P','Phosphorus':'N','Arsenic':'N','Boron in SiC':'P','Phosphorus in SiC':'N','Silicon in GaAs':'N','Germanium in GaAs':'N'};
+const COLORS={'Arsenic':'#1565C0','Phosphorus':'#E65100','Boron':'#2E7D32','Gallium in Silicon':'#7B1FA2','Silicon in GaAs':'#6A1B9A','Germanium in GaAs':'#00838F','Phosphorus in SiC':'#F9A825','Boron in SiC':'#AD1457'};
+const k=8.617e-5,D0=10.5,Ea_As=4.05,Ea_P=3.66;
+let cmChart=null,compChart=null,spChart=null;
 
-    let cmChart = null;
-    let compChart = null;
+function getGroup(m){for(const[g,a]of Object.entries(GROUPS))if(a.includes(m))return g;return'Unknown';}
+function parseEV(s){const n=parseFloat(s);return s.includes('MeV')?n*1e6:s.includes('keV')?n*1e3:n;}
+function closestE(metal,tgt){const tv=parseEV(tgt),keys=Object.keys(metalIonData[metal]);return keys.reduce((b,k2)=>Math.abs(parseEV(k2)-tv)<Math.abs(parseEV(b)-tv)?k2:b,keys[0]);}
+function calcD(Tc,m){return D0*Math.exp(-(m==='Phosphorus'?Ea_P:Ea_As)/(k*(Tc+273.15)));}
+function genX(rp,sig,sig_t){const a=Math.max(0,rp-5*sig),b=rp+5*Math.max(sig,sig_t);return Array.from({length:1001},(_,i)=>a+(b-a)*i/1000);}
 
-    function getGroup(m) {
-        for (const [g, arr] of Object.entries(GROUPS)) if (arr.includes(m)) return g;
-        return 'Unknown';
+// Stopping Power Formula (PDF)
+function sp(eKey,metal){
+  const d=metalIonData[metal][eKey];
+  if(!d||d.se==null)return null;
+  const Se=d.se,Sn=d.sn,St=Se+Sn;
+  return{Se,Sn,St,pctE:Se/St*100,pctN:Sn/St*100,dom:Se>=Sn?'Electronic':'Nuclear'};
+}
+
+function updateIonEnergyDropdown(){
+  const metal=document.getElementById('metal-select').value,keys=Object.keys(metalIonData[metal]);
+  ['energy-lower','energy-upper'].forEach((id,idx)=>{
+    const sel=document.getElementById(id);sel.innerHTML='';
+    keys.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;sel.appendChild(o);});
+    sel.selectedIndex=idx===0?0:keys.length-1;
+  });
+}
+
+function buildSpChart(metal){
+  const entries=Object.entries(metalIonData[metal]).filter(([,d])=>d.se!=null);
+  const eV=entries.map(([k2])=>parseEV(k2)/1e3);
+  const Se=entries.map(([,d])=>d.se),Sn=entries.map(([,d])=>d.sn),St=entries.map(([,d])=>d.se+d.sn);
+  if(spChart)spChart.destroy();
+  spChart=new Chart(document.getElementById('spChart').getContext('2d'),{
+    type:'line',
+    data:{datasets:[
+      {label:'Sₑ Electronic',data:eV.map((x,i)=>({x,y:Se[i]})),borderColor:'#1565C0',pointRadius:0,borderWidth:2},
+      {label:'Sₙ Nuclear',   data:eV.map((x,i)=>({x,y:Sn[i]})),borderColor:'#E65100',pointRadius:0,borderWidth:2},
+      {label:'S_total',      data:eV.map((x,i)=>({x,y:St[i]})),borderColor:'#2E7D32',pointRadius:0,borderWidth:2.5,borderDash:[6,3]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{type:'logarithmic',title:{display:true,text:'Energy (keV)'},ticks:{callback:v=>v+''}},
+              y:{type:'logarithmic',title:{display:true,text:'Stopping Power [MeV/(mg/cm²)]'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(1)}}},
+      plugins:{legend:{display:true,position:'top'},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(3),title:ctx=>ctx[0].parsed.x.toFixed(2)+' keV'}},
+        zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}
+  });
+}
+
+function buildOriginalChart(xlo,Nstlo,Ndilo,xhi,Nsthi,Ndihi,tox,eLo,eHi){
+  const allPos=[...Nstlo,...Nsthi].filter(n=>n>0);
+  const mk=(x,N)=>x.map((v,i)=>({x:v,y:N[i]})).filter(p=>p.y>0);
+  if(cmChart)cmChart.destroy();
+  cmChart=new Chart(document.getElementById('cmChart').getContext('2d'),{
+    type:'line',
+    data:{datasets:[
+      {label:'As-impl @ '+eLo, data:mk(xlo,Nstlo),borderColor:'#1565C0',pointRadius:0,borderWidth:2.5},
+      {label:'Diffused @ '+eLo,data:mk(xlo,Ndilo),borderColor:'#1565C0',borderDash:[6,4],pointRadius:0,borderWidth:2},
+      {label:'As-impl @ '+eHi, data:mk(xhi,Nsthi),borderColor:'#E65100',pointRadius:0,borderWidth:2.5},
+      {label:'Diffused @ '+eHi,data:mk(xhi,Ndihi),borderColor:'#E65100',borderDash:[6,4],pointRadius:0,borderWidth:2},
+      {label:'Oxide Boundary',data:[{x:tox,y:Math.min(...allPos)},{x:tox,y:Math.max(...allPos)*10}],borderColor:'red',pointRadius:0,borderWidth:2,borderDash:[2,2]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{type:'linear',title:{display:true,text:'x (cm)'}},
+              y:{type:'logarithmic',title:{display:true,text:'N(x) (cm⁻³)'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(0)}}},
+      plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(2)+' cm⁻³',title:ctx=>'x: '+ctx[0].parsed.x.toExponential(2)+' cm'}},
+        zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy',sensitivity:3},pan:{enabled:true,mode:'xy'}}}}
+  });
+}
+
+function buildCompChart(selMetal,eLo,nb,q,tox,Tc,ts){
+  const group=getGroup(selMetal),selType=TYPES[selMetal];
+  const members=GROUPS[group].filter(m=>TYPES[m]===selType);
+  document.getElementById('groupLabel').textContent=group+' — '+(selType==='P'?'P-type':'N-type');
+  let xMin=Infinity,xMax=-Infinity;const mdata=[];
+  for(const m of members){
+    const ek=closestE(m,eLo),{rp,sig}=metalIonData[m][ek];
+    const D=calcD(Tc,m),sigt=Math.sqrt(sig**2+2*D*ts);
+    const np=q/(sig*Math.sqrt(2*Math.PI)),npt=q/(sigt*Math.sqrt(2*Math.PI));
+    xMin=Math.min(xMin,Math.max(0,rp-5*sig));xMax=Math.max(xMax,rp+5*Math.max(sig,sigt));
+    mdata.push({m,ek,rp,sig,sigt,np,npt});
+  }
+  const xs=Array.from({length:1001},(_,i)=>xMin+(xMax-xMin)*i/1000);
+  const datasets=[];
+  for(const{m,ek,rp,sig,sigt,np,npt}of mdata){
+    const col=COLORS[m],isSel=m===selMetal,eNote=ek!==eLo?' @'+ek:'';
+    const pts=xs.map(x=>({x,y:Math.max(np*Math.exp(-((x-rp)**2)/(2*sig**2))-nb,0)})).filter(p=>p.y>0);
+    datasets.push({label:m+eNote,data:pts,borderColor:col,pointRadius:0,borderWidth:isSel?3:1.8,borderDash:[],order:isSel?0:1});
+    if(isSel){
+      const dm=(ts/60).toFixed(1);
+      const pts2=xs.map(x=>({x,y:Math.max(npt*Math.exp(-((x-rp)**2)/(2*sigt**2))-nb,0)})).filter(p=>p.y>0);
+      datasets.push({label:m+' after '+dm+'min @'+Tc+'°C',data:pts2,borderColor:col,pointRadius:0,borderWidth:2,borderDash:[7,4],order:0});
     }
-    function parseEV(s) {
-        const n = parseFloat(s);
-        return s.includes('MeV') ? n * 1e6 : s.includes('keV') ? n * 1e3 : n;
+  }
+  const allY=datasets.flatMap(d=>d.data.map(p=>p.y)).filter(y=>y>0);
+  if(allY.length)datasets.push({label:'Oxide Boundary (XOX)',data:[{x:tox,y:Math.min(...allY)},{x:tox,y:Math.max(...allY)*10}],borderColor:'#e53935',borderWidth:2,borderDash:[3,3],pointRadius:0,order:2});
+  if(compChart)compChart.destroy();
+  compChart=new Chart(document.getElementById('compChart').getContext('2d'),{
+    type:'line',data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{type:'linear',title:{display:true,text:'x (cm)'}},
+              y:{type:'logarithmic',title:{display:true,text:'N(x) (cm⁻³)'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(0)}}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(2)+' cm⁻³',title:ctx=>'x: '+ctx[0].parsed.x.toExponential(3)+' cm'}},
+        zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}
+  });
+  const leg=document.getElementById('compLegend');leg.innerHTML='';
+  const dm=(ts/60).toFixed(1);
+  const hdr=document.createElement('div');hdr.className='comp-legend-header';
+  hdr.textContent=(selType==='P'?'▲ P-type':'▼ N-type')+' — '+group;leg.appendChild(hdr);
+  for(const{m,ek}of mdata){
+    const isSel=m===selMetal,col=COLORS[m],eNote=ek!==eLo?' @'+ek:'';
+    const item=document.createElement('div');item.className='comp-legend-item';
+    const line=document.createElement('span');line.style.cssText=`display:inline-block;width:28px;height:${isSel?4:3}px;background:${col};border-radius:2px;`;
+    const lbl=document.createElement('span');lbl.textContent=m+eNote;if(isSel)lbl.style.fontWeight='700';
+    item.appendChild(line);item.appendChild(lbl);leg.appendChild(item);
+    if(isSel){
+      const i2=document.createElement('div');i2.className='comp-legend-item';
+      const l2=document.createElement('span');l2.style.cssText=`display:inline-block;width:28px;height:3px;background:repeating-linear-gradient(90deg,${col} 0,${col} 7px,transparent 7px,transparent 11px);border-radius:2px;`;
+      const b2=document.createElement('span');b2.textContent=m+' after '+dm+'min @'+Tc+'°C';b2.style.fontStyle='italic';
+      i2.appendChild(l2);i2.appendChild(b2);leg.appendChild(i2);
     }
-    function closestE(metal, targetStr) {
-        const tv = parseEV(targetStr), keys = Object.keys(metalIonData[metal]);
-        return keys.reduce((best, k) => Math.abs(parseEV(k) - tv) < Math.abs(parseEV(best) - tv) ? k : best, keys[0]);
-    }
-    function calculateDiffusionCoeff(T_celsius, metal_type) {
-        const T_kelvin = T_celsius + 273.15;
-        const Ea = metal_type === 'Phosphorus' ? Ea_Phosphorus : Ea_Arsenic;
-        return D0 * Math.exp(-Ea / (k_boltzmann * T_kelvin));
-    }
-    function getSemiconductorType(metalType, temperature) {
-        if (metalType.includes('GaAs') || metalType.includes('Gallium')) {
-            return temperature >= 550
-                ? { type: 'n-type', class: 'bg-primary' }
-                : { type: 'p-type', class: 'bg-success' };
-        }
-        return null;
-    }
-    function generateXValues(rp, sig, sig_t) {
-        const x_min = Math.max(0, rp - 5 * sig);
-        const x_max = rp + 5 * Math.max(sig, sig_t);
-        return Array.from({ length: 1001 }, (_, i) => x_min + (x_max - x_min) * i / 1000);
-    }
+  }
+  if(allY.length){
+    const oi=document.createElement('div');oi.className='comp-legend-item';
+    const ol=document.createElement('span');ol.style.cssText='display:inline-block;width:28px;height:3px;background:repeating-linear-gradient(90deg,#e53935 0,#e53935 3px,transparent 3px,transparent 6px);border-radius:2px;';
+    const ob=document.createElement('span');ob.textContent='Oxide Boundary (XOX)';
+    oi.appendChild(ol);oi.appendChild(ob);leg.appendChild(oi);
+  }
+}
 
-    function updateIonEnergyDropdown() {
-        const metal = document.getElementById('metal-select').value;
-        const keys  = Object.keys(metalIonData[metal]);
-        const lower = document.getElementById('energy-lower');
-        const upper = document.getElementById('energy-upper');
-        lower.innerHTML = '';
-        upper.innerHTML = '';
-        keys.forEach(e => {
-            const o1 = document.createElement('option'); o1.value = e; o1.textContent = e; lower.appendChild(o1);
-            const o2 = document.createElement('option'); o2.value = e; o2.textContent = e; upper.appendChild(o2);
-        });
-        lower.selectedIndex = 0;
-        upper.selectedIndex = keys.length - 1;
-    }
+function calcOne(metal,eKey,nb,q,tox,Tc,ts){
+  const{rp,sig}=metalIonData[metal][eKey];
+  const D=calcD(Tc,metal),sig_t=Math.sqrt(sig**2+2*D*ts);
+  const xv=genX(rp,sig,sig_t);
+  const np=q/(sig*Math.sqrt(2*Math.PI)),np_t=q/(sig_t*Math.sqrt(2*Math.PI));
+  const Ns=xv.map(x=>Math.max(np*Math.exp(-((x-rp)**2)/(2*sig**2))-nb,0));
+  const Nd=xv.map(x=>Math.max(np_t*Math.exp(-((x-rp)**2)/(2*sig_t**2))-nb,0));
+  const Nts=Math.max(np*Math.exp(-((tox-rp)**2)/(2*sig**2))-nb,0);
+  const Ntd=Math.max(np_t*Math.exp(-((tox-rp)**2)/(2*sig_t**2))-nb,0);
+  const xjs=np>nb?rp+sig*Math.sqrt(2*Math.log(np/nb)):0;
+  const xje=xjs>tox?xjs-tox:0;
+  const xjd=np_t>nb?rp+sig_t*Math.sqrt(2*Math.log(np_t/nb)):0;
+  const xjde=xjd>tox?xjd-tox:0;
+  const dXj=(xjd&&xjs)?xjd-xjs:0,rpp=rp+dXj/2;
+  return{rp,sig,D,sig_t,np,np_t,x_vals:xv,N_static:Ns,N_diff:Nd,
+    N_x_tox_static:Nts,N_x_tox_diff:Ntd,xj_static:xjs,xj_eff_static:xje,
+    xj_diff:xjd,xj_eff_diff:xjde,rpPrime:rpp,deltaRp:rpp-rp,spData:sp(eKey,metal)};
+}
 
-    function buildOriginalChart(x_lo, N_st_lo, N_di_lo, x_hi, N_st_hi, N_di_hi, tox, anneal_time_s, anneal_temp_c, eLow, eHigh) {
-        const allPos = [...N_st_lo, ...N_st_hi].filter(n => n > 0);
-        const mk = (x, N) => x.map((v, i) => ({ x: v, y: N[i] })).filter(p => p.y > 0);
+function fillSP(sfx,s){
+  if(!s){['se','sn','stotal','pctElec','pctNucl','dom'].forEach(id=>{const el=document.getElementById(id+sfx);if(el)el.textContent='N/A';});return;}
+  document.getElementById('se'+sfx).textContent=s.Se.toExponential(4);
+  document.getElementById('sn'+sfx).textContent=s.Sn.toExponential(4);
+  document.getElementById('stotal'+sfx).textContent=s.St.toExponential(4);
+  document.getElementById('pctElec'+sfx).textContent=s.pctE.toFixed(2)+'%';
+  document.getElementById('pctNucl'+sfx).textContent=s.pctN.toFixed(2)+'%';
+  const de=document.getElementById('dom'+sfx);de.textContent=s.dom;de.style.color=s.dom==='Electronic'?'#1565C0':'#E65100';
+  document.getElementById('barElec'+sfx).style.width=s.pctE.toFixed(1)+'%';
+  document.getElementById('barNucl'+sfx).style.width=s.pctN.toFixed(1)+'%';
+}
 
-        if (cmChart) cmChart.destroy();
-        cmChart = new Chart(document.getElementById('cmChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                datasets: [
-                    { label: 'As-impl @ ' + eLow,  data: mk(x_lo, N_st_lo), borderColor: '#1565C0', pointRadius: 0, borderWidth: 2.5 },
-                    { label: 'Diffused @ ' + eLow,  data: mk(x_lo, N_di_lo), borderColor: '#1565C0', borderDash: [6,4], pointRadius: 0, borderWidth: 2 },
-                    { label: 'As-impl @ ' + eHigh, data: mk(x_hi, N_st_hi), borderColor: '#E65100', pointRadius: 0, borderWidth: 2.5 },
-                    { label: 'Diffused @ ' + eHigh, data: mk(x_hi, N_di_hi), borderColor: '#E65100', borderDash: [6,4], pointRadius: 0, borderWidth: 2 },
-                    { label: 'Oxide Boundary', data: [{ x: tox, y: Math.min(...allPos) }, { x: tox, y: Math.max(...allPos) * 10 }], borderColor: 'red', pointRadius: 0, borderWidth: 2, borderDash: [2,2] }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { type: 'linear', title: { display: true, text: 'x (cm)' } },
-                    y: { type: 'logarithmic', title: { display: true, text: 'N(x) (cm\u207B\xB3)' }, ticks: { callback: v => '10^' + Math.log10(v).toFixed(0) } }
-                },
-                plugins: {
-                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toExponential(2) + ' cm\u207B\xB3', title: ctx => 'x: ' + ctx[0].parsed.x.toExponential(2) + ' cm' } },
-                    zoom: { zoom: { wheel: { enabled: true, speed: 0.1 }, pinch: { enabled: true }, mode: 'xy', sensitivity: 3 }, pan: { enabled: true, mode: 'xy' }, limits: { y: { min: 'original', max: 'original' } } }
-                }
-            }
-        });
-    }
+function fillCol(sfx,r,eKey){
+  const s=v=>v?v.toExponential(4):'N/A';
+  document.getElementById('ionEnergy'+sfx).textContent=eKey;
+  document.getElementById('ionRP'+sfx).textContent=r.rp.toExponential(4);
+  document.getElementById('ionSig'+sfx).textContent=r.sig.toExponential(4);
+  document.getElementById('diffCoeff'+sfx).textContent=r.D.toExponential(4);
+  document.getElementById('sigAfterDiff'+sfx).textContent=r.sig_t.toExponential(4);
+  document.getElementById('rpPrime'+sfx).textContent=r.rpPrime.toExponential(4);
+  document.getElementById('deltaRp'+sfx).textContent=r.deltaRp.toExponential(4);
+  document.getElementById('nxToxStatic'+sfx).textContent=r.N_x_tox_static.toExponential(4);
+  document.getElementById('nxToxDiff'+sfx).textContent=r.N_x_tox_diff.toExponential(4);
+  document.getElementById('concChange'+sfx).textContent=r.N_x_tox_static>0?((r.N_x_tox_diff-r.N_x_tox_static)/r.N_x_tox_static*100).toFixed(2):'N/A';
+  document.getElementById('xjStatic'+sfx).textContent=s(r.xj_static);
+  document.getElementById('xjEffStatic'+sfx).textContent=s(r.xj_eff_static);
+  document.getElementById('xjDiff'+sfx).textContent=s(r.xj_diff);
+  document.getElementById('xjEffDiff'+sfx).textContent=s(r.xj_eff_diff);
+  const j1=r.xj_static?r.xj_static-r.xj_eff_static:0;
+  const j2=r.xj_diff?r.xj_diff-r.xj_eff_diff:0;
+  document.getElementById('junctionDiff1'+sfx).textContent=j1?j1.toExponential(4):'N/A';
+  document.getElementById('junctionDiff2'+sfx).textContent=j2?j2.toExponential(4):'N/A';
+  fillSP(sfx,r.spData);
+}
 
-    function buildCompChart(selMetal, ion_energy_lo, nb, q, tox, Tc, ts) {
-        const group   = getGroup(selMetal);
-        const selType = TYPES[selMetal];
-        // Only show dopants of the SAME carrier type as the selected species
-        const members = GROUPS[group].filter(m => TYPES[m] === selType);
+function calculateResults(){
+  const metal=document.getElementById('metal-select').value;
+  let eLo=document.getElementById('energy-lower').value,eHi=document.getElementById('energy-upper').value;
+  const nb=parseFloat(document.getElementById('nb').value),q=parseFloat(document.getElementById('q').value);
+  const tox=parseFloat(document.getElementById('tox').value),Tc=parseFloat(document.getElementById('anneal_temp_c').value),ts=parseFloat(document.getElementById('anneal_time_s').value);
+  if(parseEV(eLo)>parseEV(eHi))[eLo,eHi]=[eHi,eLo];
+  const rLo=calcOne(metal,eLo,nb,q,tox,Tc,ts),rHi=calcOne(metal,eHi,nb,q,tox,Tc,ts);
+  document.getElementById('resultsSection').style.display='block';
+  document.getElementById('metalType').textContent=metal;
+  document.getElementById('annealTime').textContent=ts;
+  document.getElementById('annealTimeMin').textContent=(ts/60).toFixed(2);
+  document.getElementById('annealTemp').textContent=Tc;
+  document.getElementById('toxValue').textContent=tox.toExponential(4);
+  document.getElementById('toxValueJn').textContent=tox.toExponential(4);
+  fillCol('Low',rLo,eLo);fillCol('High',rHi,eHi);
+  const semInfo=(metal.includes('GaAs')||metal.includes('Gallium'))?Tc>=550?{type:'n-type',cls:'bg-primary'}:{type:'p-type',cls:'bg-success'}:null;
+  const sc=document.getElementById('semiconductorTypeCard');
+  if(semInfo){sc.style.display='block';const el=document.getElementById('semiconductorType');el.textContent=semInfo.type;el.className='badge '+semInfo.cls;}
+  else sc.style.display='none';
+  buildSpChart(metal);
+  buildOriginalChart(rLo.x_vals,rLo.N_static,rLo.N_diff,rHi.x_vals,rHi.N_static,rHi.N_diff,tox,eLo,eHi);
+  buildCompChart(metal,eLo,nb,q,tox,Tc,ts);
+}
 
-        const typeLabel = selType === 'P' ? 'P-type' : 'N-type';
-        document.getElementById('groupLabel').textContent = group + ' — ' + typeLabel;
-
-        let xMin = Infinity, xMax = -Infinity;
-        const mdata = [];
-
-        for (const m of members) {
-            const ek = closestE(m, ion_energy_lo);
-            const { rp, sig } = metalIonData[m][ek];
-            const D    = calculateDiffusionCoeff(Tc, m);
-            const sigt = Math.sqrt(sig ** 2 + 2 * D * ts);
-            const np   = q / (sig  * Math.sqrt(2 * Math.PI));
-            const npt  = q / (sigt * Math.sqrt(2 * Math.PI));
-            xMin = Math.min(xMin, Math.max(0, rp - 5 * sig));
-            xMax = Math.max(xMax, rp + 5 * Math.max(sig, sigt));
-            mdata.push({ m, ek, rp, sig, sigt, np, npt });
-        }
-
-        const xs = Array.from({ length: 1001 }, (_, i) => xMin + (xMax - xMin) * i / 1000);
-        const datasets = [];
-
-        for (const { m, ek, rp, sig, sigt, np, npt } of mdata) {
-            const col   = COLORS[m];
-            const isSel = m === selMetal;
-            const eNote = ek !== ion_energy_lo ? ' @' + ek : '';
-            const pts = xs.map(x => ({ x, y: Math.max(np * Math.exp(-((x - rp) ** 2) / (2 * sig ** 2)) - nb, 0) })).filter(p => p.y > 0);
-            datasets.push({ label: m + eNote, data: pts, borderColor: col, pointRadius: 0, borderWidth: isSel ? 3 : 1.8, borderDash: [], order: isSel ? 0 : 1 });
-            if (isSel) {
-                const dm = (ts / 60).toFixed(1);
-                const pts2 = xs.map(x => ({ x, y: Math.max(npt * Math.exp(-((x - rp) ** 2) / (2 * sigt ** 2)) - nb, 0) })).filter(p => p.y > 0);
-                datasets.push({ label: m + ' after ' + dm + 'min @' + Tc + '\xB0C', data: pts2, borderColor: col, pointRadius: 0, borderWidth: 2, borderDash: [7,4], order: 0 });
-            }
-        }
-
-        const allY = datasets.flatMap(d => d.data.map(p => p.y)).filter(y => y > 0);
-        if (allY.length) {
-            datasets.push({ label: 'Oxide Boundary (XOX)', data: [{ x: tox, y: Math.min(...allY) }, { x: tox, y: Math.max(...allY) * 10 }], borderColor: '#e53935', borderWidth: 2, borderDash: [3,3], pointRadius: 0, order: 2 });
-        }
-
-        if (compChart) compChart.destroy();
-        compChart = new Chart(document.getElementById('compChart').getContext('2d'), {
-            type: 'line',
-            data: { datasets },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { type: 'linear', title: { display: true, text: 'x (cm)' } },
-                    y: { type: 'logarithmic', title: { display: true, text: 'N(x) (cm\u207B\xB3)' }, ticks: { callback: v => '10^' + Math.log10(v).toFixed(0) } }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toExponential(2) + ' cm\u207B\xB3', title: ctx => 'x: ' + ctx[0].parsed.x.toExponential(3) + ' cm' } },
-                    zoom: { zoom: { wheel: { enabled: true, speed: 0.1 }, pinch: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } }
-                }
-            }
-        });
-
-        // Legend
-        const leg = document.getElementById('compLegend');
-        leg.innerHTML = '';
-        const dm = (ts / 60).toFixed(1);
-
-        const hdr = document.createElement('div');
-        hdr.className = 'comp-legend-header';
-        hdr.textContent = (selType === 'P' ? '▲ P-type' : '▼ N-type') + ' — ' + group;
-        leg.appendChild(hdr);
-
-        for (const { m, ek } of mdata) {
-            const isSel = m === selMetal;
-            const col   = COLORS[m];
-            const eNote = ek !== ion_energy_lo ? ' @' + ek : '';
-
-            const item = document.createElement('div');
-            item.className = 'comp-legend-item';
-            const line = document.createElement('span');
-            line.style.cssText = `display:inline-block;width:28px;height:${isSel ? 4 : 3}px;background:${col};border-radius:2px;`;
-            const lbl = document.createElement('span');
-            lbl.textContent = m + eNote;
-            if (isSel) lbl.style.fontWeight = '700';
-            item.appendChild(line); item.appendChild(lbl);
-            leg.appendChild(item);
-
-            if (isSel) {
-                const item2 = document.createElement('div');
-                item2.className = 'comp-legend-item';
-                const line2 = document.createElement('span');
-                line2.style.cssText = `display:inline-block;width:28px;height:3px;`
-                    + `background:repeating-linear-gradient(90deg,${col} 0,${col} 7px,transparent 7px,transparent 11px);border-radius:2px;`;
-                const lbl2 = document.createElement('span');
-                lbl2.textContent = m + ' after ' + dm + 'min @' + Tc + '\xB0C';
-                lbl2.style.fontStyle = 'italic';
-                item2.appendChild(line2); item2.appendChild(lbl2);
-                leg.appendChild(item2);
-            }
-        }
-
-        if (allY.length) {
-            const oItem = document.createElement('div');
-            oItem.className = 'comp-legend-item';
-            const oLine = document.createElement('span');
-            oLine.style.cssText = 'display:inline-block;width:28px;height:3px;'
-                + 'background:repeating-linear-gradient(90deg,#e53935 0,#e53935 3px,transparent 3px,transparent 6px);border-radius:2px;';
-            const oLbl = document.createElement('span');
-            oLbl.textContent = 'Oxide Boundary (XOX)';
-            oItem.appendChild(oLine); oItem.appendChild(oLbl);
-            leg.appendChild(oItem);
-        }
-    }
-
-    function calcOne(metal_type, ion_energy, nb, q, tox, anneal_temp_c, anneal_time_s) {
-        const ionData = metalIonData[metal_type][ion_energy];
-        const rp = ionData.rp, sig = ionData.sig;
-        const D     = calculateDiffusionCoeff(anneal_temp_c, metal_type);
-        const sig_t = Math.sqrt(sig ** 2 + 2 * D * anneal_time_s);
-        const x_vals = generateXValues(rp, sig, sig_t);
-        const np   = q / (sig   * Math.sqrt(2 * Math.PI));
-        const np_t = q / (sig_t * Math.sqrt(2 * Math.PI));
-        const N_static = x_vals.map(x => Math.max(np   * Math.exp(-((x - rp) ** 2) / (2 * sig   ** 2)) - nb, 0));
-        const N_diff   = x_vals.map(x => Math.max(np_t * Math.exp(-((x - rp) ** 2) / (2 * sig_t ** 2)) - nb, 0));
-        const N_x_tox_static = Math.max(np   * Math.exp(-((tox - rp) ** 2) / (2 * sig   ** 2)) - nb, 0);
-        const N_x_tox_diff   = Math.max(np_t * Math.exp(-((tox - rp) ** 2) / (2 * sig_t ** 2)) - nb, 0);
-        const xj_static      = np   > nb ? rp + sig   * Math.sqrt(2 * Math.log(np   / nb)) : 0;
-        const xj_eff_static  = xj_static > tox ? xj_static - tox : 0;
-        const xj_diff        = np_t > nb ? rp + sig_t * Math.sqrt(2 * Math.log(np_t / nb)) : 0;
-        const xj_eff_diff    = xj_diff > tox ? xj_diff - tox : 0;
-        const deltaXj        = (xj_diff && xj_static) ? xj_diff - xj_static : 0;
-        const rpPrime        = rp + deltaXj / 2;
-        return { rp, sig, D, sig_t, np, np_t, x_vals, N_static, N_diff,
-                 N_x_tox_static, N_x_tox_diff,
-                 xj_static, xj_eff_static, xj_diff, xj_eff_diff,
-                 rpPrime, deltaRp: rpPrime - rp };
-    }
-
-    function fillCol(suffix, r, ion_energy) {
-        const s = v => v ? v.toExponential(4) : 'N/A';
-        document.getElementById('ionEnergy'    + suffix).textContent = ion_energy;
-        document.getElementById('ionRP'        + suffix).textContent = r.rp.toExponential(4);
-        document.getElementById('ionSig'       + suffix).textContent = r.sig.toExponential(4);
-        document.getElementById('diffCoeff'    + suffix).textContent = r.D.toExponential(4);
-        document.getElementById('sigAfterDiff' + suffix).textContent = r.sig_t.toExponential(4);
-        document.getElementById('rpPrime'      + suffix).textContent = r.rpPrime.toExponential(4);
-        document.getElementById('deltaRp'      + suffix).textContent = r.deltaRp.toExponential(4);
-        document.getElementById('nxToxStatic'  + suffix).textContent = r.N_x_tox_static.toExponential(4);
-        document.getElementById('nxToxDiff'    + suffix).textContent = r.N_x_tox_diff.toExponential(4);
-        document.getElementById('concChange'   + suffix).textContent = r.N_x_tox_static > 0
-            ? ((r.N_x_tox_diff - r.N_x_tox_static) / r.N_x_tox_static * 100).toFixed(2) : 'N/A';
-        document.getElementById('xjStatic'    + suffix).textContent = s(r.xj_static);
-        document.getElementById('xjEffStatic' + suffix).textContent = s(r.xj_eff_static);
-        document.getElementById('xjDiff'      + suffix).textContent = s(r.xj_diff);
-        document.getElementById('xjEffDiff'   + suffix).textContent = s(r.xj_eff_diff);
-        const jd1 = r.xj_static ? r.xj_static - r.xj_eff_static : 0;
-        const jd2 = r.xj_diff   ? r.xj_diff   - r.xj_eff_diff   : 0;
-        document.getElementById('junctionDiff1' + suffix).textContent = jd1 ? jd1.toExponential(4) : 'N/A';
-        document.getElementById('junctionDiff2' + suffix).textContent = jd2 ? jd2.toExponential(4) : 'N/A';
-    }
-
-    function calculateResults() {
-        const metal_type    = document.getElementById('metal-select').value;
-        let ion_energy_lo   = document.getElementById('energy-lower').value;
-        let ion_energy_hi   = document.getElementById('energy-upper').value;
-        const nb            = parseFloat(document.getElementById('nb').value);
-        const q             = parseFloat(document.getElementById('q').value);
-        const tox           = parseFloat(document.getElementById('tox').value);
-        const anneal_temp_c = parseFloat(document.getElementById('anneal_temp_c').value);
-        const anneal_time_s = parseFloat(document.getElementById('anneal_time_s').value);
-
-        if (parseEV(ion_energy_lo) > parseEV(ion_energy_hi)) {
-            [ion_energy_lo, ion_energy_hi] = [ion_energy_hi, ion_energy_lo];
-        }
-
-        const rLow  = calcOne(metal_type, ion_energy_lo, nb, q, tox, anneal_temp_c, anneal_time_s);
-        const rHigh = calcOne(metal_type, ion_energy_hi, nb, q, tox, anneal_temp_c, anneal_time_s);
-
-        document.getElementById('resultsSection').style.display = 'block';
-        document.getElementById('metalType').textContent     = metal_type;
-        document.getElementById('annealTime').textContent    = anneal_time_s;
-        document.getElementById('annealTimeMin').textContent = (anneal_time_s / 60).toFixed(2);
-        document.getElementById('annealTemp').textContent    = anneal_temp_c;
-        document.getElementById('toxValue').textContent      = tox.toExponential(4);
-        document.getElementById('toxValueJn').textContent    = tox.toExponential(4);
-
-        fillCol('Low',  rLow,  ion_energy_lo);
-        fillCol('High', rHigh, ion_energy_hi);
-
-        const semInfo = getSemiconductorType(metal_type, anneal_temp_c);
-        const semCard = document.getElementById('semiconductorTypeCard');
-        if (semInfo) {
-            semCard.style.display = 'block';
-            const el = document.getElementById('semiconductorType');
-            el.textContent = semInfo.type;
-            el.className = 'badge ' + semInfo.class;
-        } else {
-            semCard.style.display = 'none';
-        }
-
-        buildOriginalChart(rLow.x_vals, rLow.N_static, rLow.N_diff,
-                           rHigh.x_vals, rHigh.N_static, rHigh.N_diff,
-                           tox, anneal_time_s, anneal_temp_c, ion_energy_lo, ion_energy_hi);
-        buildCompChart(metal_type, ion_energy_lo, nb, q, tox, anneal_temp_c, anneal_time_s);
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        updateIonEnergyDropdown();
-        document.getElementById('metal-select').onchange = updateIonEnergyDropdown;
-        document.getElementById('resetZoomCm').onclick   = () => cmChart   && cmChart.resetZoom();
-        document.getElementById('zoomInCm').onclick      = () => cmChart   && cmChart.zoom(1.2);
-        document.getElementById('zoomOutCm').onclick     = () => cmChart   && cmChart.zoom(0.8);
-        document.getElementById('resetZoomComp').onclick = () => compChart && compChart.resetZoom();
-        document.getElementById('zoomInComp').onclick    = () => compChart && compChart.zoom(1.2);
-        document.getElementById('zoomOutComp').onclick   = () => compChart && compChart.zoom(0.8);
-    });
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+document.addEventListener('DOMContentLoaded',()=>{
+  updateIonEnergyDropdown();
+  document.getElementById('metal-select').onchange=updateIonEnergyDropdown;
+  document.getElementById('resetZoomCm').onclick=()=>cmChart&&cmChart.resetZoom();
+  document.getElementById('zoomInCm').onclick=()=>cmChart&&cmChart.zoom(1.2);
+  document.getElementById('zoomOutCm').onclick=()=>cmChart&&cmChart.zoom(0.8);
+  document.getElementById('resetZoomComp').onclick=()=>compChart&&compChart.resetZoom();
+  document.getElementById('zoomInComp').onclick=()=>compChart&&compChart.zoom(1.2);
+  document.getElementById('zoomOutComp').onclick=()=>compChart&&compChart.zoom(0.8);
+  document.getElementById('resetZoomSp').onclick=()=>spChart&&spChart.resetZoom();
+  document.getElementById('zoomInSp').onclick=()=>spChart&&spChart.zoom(1.2);
+  document.getElementById('zoomOutSp').onclick=()=>spChart&&spChart.zoom(0.8);
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
