@@ -25,6 +25,16 @@
         .sp-bar-elec{height:100%;background:#1565C0;float:left;transition:width .4s;}
         .sp-bar-nucl{height:100%;background:#E65100;float:left;transition:width .4s;}
         .sp-formula-box{background:#f0f4ff;border:1px solid #b8ccf0;border-radius:6px;padding:8px 12px;font-size:.82em;margin-bottom:8px;}
+
+        /* ── Dark linear SP chart card ── */
+        .dark-chart-card{background:#111827;border:none;border-radius:12px;overflow:hidden;}
+        .dark-chart-card .card-header{background:#1f2937;color:#f9fafb;font-size:.95rem;letter-spacing:.3px;border-bottom:1px solid #374151;}
+        .dark-chart-card .chart-container{background:#111827;}
+        .dark-chart-card .zoom-buttons button{background:#374151;border-color:#4b5563;color:#d1d5db;}
+        .dark-chart-card .zoom-buttons button:hover{background:#4b5563;}
+        .dark-sp-legend{display:flex;gap:20px;padding:10px 16px 4px;font-size:.82em;color:#d1d5db;}
+        .dark-sp-legend-item{display:flex;align-items:center;gap:7px;}
+        .dark-sp-legend-dot{width:12px;height:12px;border-radius:50%;}
     </style>
 </head>
 <body>
@@ -146,9 +156,9 @@ S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp;
 </div>
 </div>
 
-<!-- Stopping Power Chart -->
+<!-- Log-Log Stopping Power Chart (existing) -->
 <div class="card mb-4">
-<div class="card-header">Stopping Power vs. Energy &mdash; S<sub>e</sub>, S<sub>n</sub>, S<sub>total</sub></div>
+<div class="card-header">Stopping Power vs. Energy &mdash; S<sub>e</sub>, S<sub>n</sub>, S<sub>total</sub> (Log-Log)</div>
 <div class="card-body">
 <div class="chart-container"><canvas id="spChart"></canvas></div>
 <div class="zoom-buttons mt-2">
@@ -156,6 +166,30 @@ S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp;
 <button id="zoomInSp"    class="btn btn-sm btn-secondary">Zoom In</button>
 <button id="zoomOutSp"   class="btn btn-sm btn-secondary">Zoom Out</button>
 </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     NEW: Dark Linear-Scale Stopping Power Chart (matches screenshot)
+     ══════════════════════════════════════════════════════════ -->
+<div class="card mb-4 dark-chart-card">
+<div class="card-header d-flex align-items-center justify-content-between">
+  <span id="linearSpTitle">Stopping Power vs. Ion Energy (Linear Scale)</span>
+  <small class="fw-normal" style="opacity:.7;font-size:.78rem;">dE/dx [MeV/(mg/cm²)]</small>
+</div>
+<div class="card-body p-0 pt-2">
+  <div class="dark-sp-legend" id="linearSpLegend">
+    <div class="dark-sp-legend-item"><div class="dark-sp-legend-dot" style="background:#E65100;"></div><span>Nuclear dE/dx (MeV/(mg/cm²))</span></div>
+    <div class="dark-sp-legend-item"><div class="dark-sp-legend-dot" style="background:#42A5F5;"></div><span>Electronic dE/dx (MeV/(mg/cm²))</span></div>
+  </div>
+  <div class="chart-container" style="height:380px;padding:0 12px 12px;">
+    <canvas id="linearSpChart"></canvas>
+  </div>
+  <div class="zoom-buttons pb-3">
+    <button id="resetZoomLinearSp" class="btn btn-sm">Reset Zoom</button>
+    <button id="zoomInLinearSp"    class="btn btn-sm">Zoom In</button>
+    <button id="zoomOutLinearSp"   class="btn btn-sm">Zoom Out</button>
+  </div>
 </div>
 </div>
 
@@ -237,11 +271,6 @@ S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp;
 <script>
 // ============================================================
 // SRIM-2008 Ion Data  |  rp & sig in cm  |  se & sn in MeV/(mg/cm²)
-//
-// Stopping Power Formulae (from PDF):
-//   S_total  = Se + Sn
-//   %Electronic = Se / (Se + Sn) × 100
-//   %Nuclear    = Sn / (Se + Sn) × 100
 // ============================================================
 const metalIonData = {
  'Arsenic':{
@@ -565,7 +594,7 @@ const GROUPS={Silicon:['Boron','Gallium in Silicon','Phosphorus','Arsenic'],SiC:
 const TYPES={'Boron':'P','Gallium in Silicon':'P','Phosphorus':'N','Arsenic':'N','Boron in SiC':'P','Phosphorus in SiC':'N','Silicon in GaAs':'N','Germanium in GaAs':'N'};
 const COLORS={'Arsenic':'#1565C0','Phosphorus':'#E65100','Boron':'#2E7D32','Gallium in Silicon':'#7B1FA2','Silicon in GaAs':'#6A1B9A','Germanium in GaAs':'#00838F','Phosphorus in SiC':'#F9A825','Boron in SiC':'#AD1457'};
 const k=8.617e-5,D0=10.5,Ea_As=4.05,Ea_P=3.66;
-let cmChart=null,compChart=null,spChart=null;
+let cmChart=null,compChart=null,spChart=null,linearSpChart=null;
 
 function getGroup(m){for(const[g,a]of Object.entries(GROUPS))if(a.includes(m))return g;return'Unknown';}
 function parseEV(s){const n=parseFloat(s);return s.includes('MeV')?n*1e6:s.includes('keV')?n*1e3:n;}
@@ -573,7 +602,6 @@ function closestE(metal,tgt){const tv=parseEV(tgt),keys=Object.keys(metalIonData
 function calcD(Tc,m){return D0*Math.exp(-(m==='Phosphorus'?Ea_P:Ea_As)/(k*(Tc+273.15)));}
 function genX(rp,sig,sig_t){const a=Math.max(0,rp-5*sig),b=rp+5*Math.max(sig,sig_t);return Array.from({length:1001},(_,i)=>a+(b-a)*i/1000);}
 
-// Stopping Power Formula (PDF)
 function sp(eKey,metal){
   const d=metalIonData[metal][eKey];
   if(!d||d.se==null)return null;
@@ -590,6 +618,7 @@ function updateIonEnergyDropdown(){
   });
 }
 
+// ── Original log-log chart ──
 function buildSpChart(metal){
   const entries=Object.entries(metalIonData[metal]).filter(([,d])=>d.se!=null);
   const eV=entries.map(([k2])=>parseEV(k2)/1e3);
@@ -610,6 +639,137 @@ function buildSpChart(metal){
         zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}
   });
 }
+
+// ══════════════════════════════════════════════════════════════
+// NEW: Dark linear-scale stopping power chart (matches screenshot)
+// Y-axis: linear   X-axis: logarithmic with friendly tick labels
+// Nuclear = red (#E65100)  Electronic = blue (#42A5F5)
+// ══════════════════════════════════════════════════════════════
+function buildLinearSpChart(metal){
+  const entries=Object.entries(metalIonData[metal]).filter(([,d])=>d.se!=null);
+  // x values in eV for log axis, labels formatted as keV / MeV
+  const eV_raw=entries.map(([k2])=>parseEV(k2)); // raw eV values
+  const Se=entries.map(([,d])=>d.se);
+  const Sn=entries.map(([,d])=>d.sn);
+
+  // Friendly x-axis label formatter
+  function fmtEnergy(eV){
+    if(eV>=1e6) return (eV/1e6).toFixed(eV%1e6===0?0:2).replace(/\.?0+$/,'')+'M';
+    return (eV/1e3).toFixed(eV%1e3===0?0:1).replace(/\.?0+$/,'')+'k';
+  }
+
+  // Determine title from metal name
+  const metalLabel = metal.includes('in ') ? metal : metal + ' in Silicon';
+  document.getElementById('linearSpTitle').textContent = metalLabel + ' — Stopping Power vs. Ion Energy';
+
+  if(linearSpChart)linearSpChart.destroy();
+
+  const ctx=document.getElementById('linearSpChart').getContext('2d');
+
+  // Dark theme colours
+  const gridColor='rgba(255,255,255,0.08)';
+  const tickColor='#9ca3af';
+  const titleColor='#d1d5db';
+
+  linearSpChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      datasets:[
+        {
+          label:'Nuclear dE/dx (MeV/(mg/cm²))',
+          data:eV_raw.map((x,i)=>({x,y:Sn[i]})),
+          borderColor:'#E65100',
+          backgroundColor:'rgba(230,81,0,0.08)',
+          pointRadius:0,
+          borderWidth:2.5,
+          tension:0.3,
+          fill:false
+        },
+        {
+          label:'Electronic dE/dx (MeV/(mg/cm²))',
+          data:eV_raw.map((x,i)=>({x,y:Se[i]})),
+          borderColor:'#42A5F5',
+          backgroundColor:'rgba(66,165,245,0.08)',
+          pointRadius:0,
+          borderWidth:2.5,
+          tension:0.3,
+          fill:false
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:{duration:400},
+      layout:{padding:{top:10,right:16,bottom:8,left:8}},
+      scales:{
+        x:{
+          type:'logarithmic',
+          title:{display:true,text:'Ion Energy',color:titleColor,font:{size:12}},
+          grid:{color:gridColor,drawBorder:false},
+          ticks:{
+            color:tickColor,
+            maxRotation:0,
+            callback:function(value){
+              // Only show ticks at round values
+              const friendly=[1e4,2.25e4,5.5e4,1.4e5,3.25e5,8e5,1.8e6,4.5e6,1e7];
+              const match=friendly.find(f=>Math.abs(value-f)/f<0.05);
+              return match?fmtEnergy(match):null;
+            }
+          }
+        },
+        y:{
+          type:'linear',
+          title:{display:true,text:'dE/dx (MeV/(mg/cm²))',color:titleColor,font:{size:12}},
+          grid:{color:gridColor,drawBorder:false},
+          ticks:{color:tickColor},
+          beginAtZero:true
+        }
+      },
+      plugins:{
+        legend:{display:false},  // custom legend in HTML
+        title:{
+          display:true,
+          text: metalLabel + ' — Stopping Power vs. Ion Energy',
+          color:'#f9fafb',
+          font:{size:14,weight:'bold'},
+          padding:{bottom:8}
+        },
+        tooltip:{
+          backgroundColor:'rgba(17,24,39,0.92)',
+          titleColor:'#f9fafb',
+          bodyColor:'#d1d5db',
+          borderColor:'rgba(255,255,255,0.15)',
+          borderWidth:1,
+          callbacks:{
+            title:ctx=>fmtEnergy(ctx[0].parsed.x)+' — Ion Energy',
+            label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toFixed(4)
+          }
+        },
+        zoom:{
+          zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},
+          pan:{enabled:true,mode:'xy'}
+        }
+      }
+    }
+  });
+
+  // Apply dark canvas background via plugin
+  // (Chart.js doesn't natively fill canvas bg, so we use a beforeDraw plugin registered globally)
+}
+
+// Register a one-time global plugin for dark canvas background
+Chart.register({
+  id:'darkBg',
+  beforeDraw(chart){
+    if(chart.canvas.id!=='linearSpChart')return;
+    const{ctx,chartArea}=chart;
+    ctx.save();
+    ctx.fillStyle='#111827';
+    ctx.fillRect(0,0,chart.width,chart.height);
+    ctx.restore();
+  }
+});
 
 function buildOriginalChart(xlo,Nstlo,Ndilo,xhi,Nsthi,Ndihi,tox,eLo,eHi){
   const allPos=[...Nstlo,...Nsthi].filter(n=>n>0);
@@ -767,6 +927,7 @@ function calculateResults(){
   if(semInfo){sc.style.display='block';const el=document.getElementById('semiconductorType');el.textContent=semInfo.type;el.className='badge '+semInfo.cls;}
   else sc.style.display='none';
   buildSpChart(metal);
+  buildLinearSpChart(metal);   // ← NEW dark chart
   buildOriginalChart(rLo.x_vals,rLo.N_static,rLo.N_diff,rHi.x_vals,rHi.N_static,rHi.N_diff,tox,eLo,eHi);
   buildCompChart(metal,eLo,nb,q,tox,Tc,ts);
 }
@@ -783,6 +944,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('resetZoomSp').onclick=()=>spChart&&spChart.resetZoom();
   document.getElementById('zoomInSp').onclick=()=>spChart&&spChart.zoom(1.2);
   document.getElementById('zoomOutSp').onclick=()=>spChart&&spChart.zoom(0.8);
+  // ── New dark linear chart zoom buttons ──
+  document.getElementById('resetZoomLinearSp').onclick=()=>linearSpChart&&linearSpChart.resetZoom();
+  document.getElementById('zoomInLinearSp').onclick=()=>linearSpChart&&linearSpChart.zoom(1.2);
+  document.getElementById('zoomOutLinearSp').onclick=()=>linearSpChart&&linearSpChart.zoom(0.8);
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
