@@ -35,6 +35,19 @@
         .dark-sp-legend{display:flex;gap:20px;padding:10px 16px 4px;font-size:.82em;color:#d1d5db;}
         .dark-sp-legend-item{display:flex;align-items:center;gap:7px;}
         .dark-sp-legend-dot{width:12px;height:12px;border-radius:50%;}
+
+        /* ── Dopant Behavior card ── */
+        .behavior-card .card-header{background:#1b5e20;}
+        .beh-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.78em;font-weight:700;color:#fff;}
+        .beh-badge-P{background:#7B1FA2;}
+        .beh-badge-N{background:#1565C0;}
+        .beh-val-high{color:#c62828;font-weight:600;}
+        .beh-val-mod{color:#e65100;font-weight:600;}
+        .beh-val-low{color:#2e7d32;font-weight:600;}
+        .beh-val-fast{color:#c62828;font-weight:600;}
+        .beh-val-vslow{color:#1565c0;font-weight:600;}
+        .beh-val-slow{color:#555;font-weight:600;}
+        .beh-notes-box{background:#fffde7;border:1px solid #f9a825;border-radius:6px;padding:8px 10px;font-size:.80em;margin-top:8px;}
     </style>
 </head>
 <body>
@@ -120,6 +133,66 @@
 </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     DOPANT SPECIES BEHAVIOR CARD  (NEW)
+     ══════════════════════════════════════════════════════════ -->
+<div class="card mb-4 behavior-card">
+  <div class="card-header d-flex align-items-center justify-content-between" style="background:#1b5e20;">
+    <span>Dopant Species Behavior &amp; Characteristics</span>
+    <span id="behaviorSubtitle" class="fw-normal" style="opacity:.8;font-size:.85rem;"></span>
+  </div>
+  <div class="card-body p-2">
+    <div class="row g-2">
+
+      <!-- Column 1: Identity -->
+      <div class="col-md-4">
+        <table class="table table-sm table-bordered mb-0" style="font-size:.83em;">
+          <thead class="table-dark"><tr><th colspan="2">Identity</th></tr></thead>
+          <tbody>
+            <tr><td>Atomic Number (Z)</td><td id="beh_Z" class="fw-bold text-center"></td></tr>
+            <tr><td>Atomic Mass</td><td id="beh_M" class="text-center"></td></tr>
+            <tr><td>Dopant Type</td><td class="text-center"><span id="beh_type"></span></td></tr>
+            <tr><td>Substrate</td><td id="beh_sub" class="text-center"></td></tr>
+            <tr><td>Typical Energy</td><td id="beh_energy" class="text-center"></td></tr>
+            <tr><td>Typical Dose</td><td id="beh_dose" class="text-center"></td></tr>
+            <tr><td>Activation Energy</td><td id="beh_Ea" class="text-center"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Column 2: Physical Behavior -->
+      <div class="col-md-4">
+        <table class="table table-sm table-bordered mb-0" style="font-size:.83em;">
+          <thead class="table-dark"><tr><th colspan="2">Physical Behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Profile Shape</td><td id="beh_profile" class="text-center"></td></tr>
+            <tr><td>Channeling Risk</td><td class="text-center"><span id="beh_channel"></span></td></tr>
+            <tr><td>Diffusivity</td><td class="text-center"><span id="beh_diff"></span></td></tr>
+            <tr><td>Lattice Damage</td><td id="beh_damage" class="text-center"></td></tr>
+            <tr><td>Segregation</td><td id="beh_seg" class="text-center"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Column 3: Application + Notes -->
+      <div class="col-md-4">
+        <table class="table table-sm table-bordered mb-0" style="font-size:.83em;">
+          <thead class="table-dark"><tr><th colspan="2">Application</th></tr></thead>
+          <tbody>
+            <tr><td colspan="2" id="beh_use" style="font-size:.82em;"></td></tr>
+          </tbody>
+        </table>
+        <div class="beh-notes-box mt-2">
+          <strong>&#9888; Notes:</strong><br>
+          <span id="beh_notes"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- END DOPANT BEHAVIOR CARD -->
+
 <!-- STOPPING POWER ANALYSIS -->
 <div class="card mb-4" style="border-left:4px solid #1565C0;">
 <div class="card-header" style="background:#1a237e;">Stopping Power Analysis &nbsp;<small class="fw-normal" style="opacity:.75;">S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp; MeV/(mg/cm²)</small></div>
@@ -156,7 +229,7 @@ S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp;
 </div>
 </div>
 
-<!-- Log-Log Stopping Power Chart (existing) -->
+<!-- Log-Log Stopping Power Chart -->
 <div class="card mb-4">
 <div class="card-header">Stopping Power vs. Energy &mdash; S<sub>e</sub>, S<sub>n</sub>, S<sub>total</sub> (Log-Log)</div>
 <div class="card-body">
@@ -169,9 +242,7 @@ S<sub>total</sub> = S<sub>e</sub> + S<sub>n</sub> &nbsp;|&nbsp;
 </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     NEW: Dark Linear-Scale Stopping Power Chart (matches screenshot)
-     ══════════════════════════════════════════════════════════ -->
+<!-- Dark Linear-Scale Stopping Power Chart -->
 <div class="card mb-4 dark-chart-card">
 <div class="card-header d-flex align-items-center justify-content-between">
   <span id="linearSpTitle">Stopping Power vs. Ion Energy (Linear Scale)</span>
@@ -590,6 +661,109 @@ const metalIonData = {
  }
 };
 
+// ============================================================
+// DOPANT BEHAVIOR DATA  (NEW)
+// ============================================================
+const DOPANT_BEHAVIOR = {
+  'Boron': {
+    atomicNumber: 5, atomicMass: '10.81 amu', type: 'P-type', typeCode: 'P',
+    substrate: 'Silicon', activationEnergy_eV: '3.46 eV', D0_cm2s: 0.76,
+    channeling: 'High', diffusivity: 'Fast',
+    profile: 'Deep, broad Gaussian — lightest common dopant',
+    damage: 'Low lattice damage due to low mass',
+    segregation: 'Segregates toward SiO\u2082 interface',
+    typical_energy: '10 keV – 200 keV',
+    typical_dose: '1\u00d710\u00b9\u00b9 – 1\u00d710\u00b9\u2075 cm\u207b\u00b2',
+    use_case: 'PMOS source/drain, well implants, threshold voltage adjust',
+    notes: 'Light mass causes significant channeling along crystal axes. Prone to transient enhanced diffusion (TED) after annealing.'
+  },
+  'Phosphorus': {
+    atomicNumber: 15, atomicMass: '30.97 amu', type: 'N-type', typeCode: 'N',
+    substrate: 'Silicon', activationEnergy_eV: '3.66 eV', D0_cm2s: 10.5,
+    channeling: 'Moderate', diffusivity: 'Moderate',
+    profile: 'Moderate depth, moderate spread',
+    damage: 'Moderate lattice damage',
+    segregation: 'Redistributes slightly at oxide interface',
+    typical_energy: '10 keV – 500 keV',
+    typical_dose: '1\u00d710\u00b9\u00b9 – 1\u00d710\u00b9\u2076 cm\u207b\u00b2',
+    use_case: 'NMOS source/drain, deep N-well, retrograde well',
+    notes: 'Good balance of range and damage. Preferred over Arsenic for deeper junctions. Crossover with Se near 100 keV.'
+  },
+  'Arsenic': {
+    atomicNumber: 33, atomicMass: '74.92 amu', type: 'N-type', typeCode: 'N',
+    substrate: 'Silicon', activationEnergy_eV: '4.05 eV', D0_cm2s: 10.5,
+    channeling: 'Low', diffusivity: 'Slow',
+    profile: 'Shallow, narrow Gaussian — heaviest common Si dopant',
+    damage: 'High lattice damage; amorphization possible at high dose',
+    segregation: 'Piles up at Si/SiO\u2082 interface',
+    typical_energy: '10 keV – 200 keV',
+    typical_dose: '1\u00d710\u00b9\u00b3 – 5\u00d710\u00b9\u2075 cm\u207b\u00b2',
+    use_case: 'Ultra-shallow NMOS junctions, LDD implants',
+    notes: 'Heavy mass = short projected range and very low diffusivity. Ideal for abrupt shallow junctions. Causes significant crystal damage requiring careful anneal.'
+  },
+  'Gallium in Silicon': {
+    atomicNumber: 31, atomicMass: '69.72 amu', type: 'P-type', typeCode: 'P',
+    substrate: 'Silicon', activationEnergy_eV: '3.90 eV', D0_cm2s: 3.6,
+    channeling: 'Low', diffusivity: 'Slow',
+    profile: 'Shallow, narrow — similar to Arsenic but P-type',
+    damage: 'High lattice damage',
+    segregation: 'Low segregation tendency',
+    typical_energy: '10 keV – 500 keV',
+    typical_dose: '1\u00d710\u00b9\u00b9 – 1\u00d710\u00b9\u2075 cm\u207b\u00b2',
+    use_case: 'Shallow P-type junctions, research applications',
+    notes: 'Less common than Boron for P-type doping. Heavy mass gives abrupt profiles similar to Arsenic. Nuclear stopping dominates across most of the energy range.'
+  },
+  'Boron in SiC': {
+    atomicNumber: 5, atomicMass: '10.81 amu', type: 'P-type', typeCode: 'P',
+    substrate: 'Silicon Carbide', activationEnergy_eV: '~4.50 eV', D0_cm2s: 0.1,
+    channeling: 'High', diffusivity: 'Very Slow',
+    profile: 'Moderate depth in SiC — wider spread than Al implant',
+    damage: 'Moderate damage in hard SiC lattice',
+    segregation: 'Minimal',
+    typical_energy: '10 keV – 400 keV',
+    typical_dose: '1\u00d710\u00b9\u00b2 – 1\u00d710\u00b9\u2076 cm\u207b\u00b2',
+    use_case: 'SiC power device P-type regions',
+    notes: 'SiC requires very high anneal temps (>1600\u00b0C) for activation. Diffusivity is extremely low — profiles are essentially frozen after implant. Electronic stopping dominates even at low energies.'
+  },
+  'Phosphorus in SiC': {
+    atomicNumber: 15, atomicMass: '30.97 amu', type: 'N-type', typeCode: 'N',
+    substrate: 'Silicon Carbide', activationEnergy_eV: '~4.80 eV', D0_cm2s: 0.05,
+    channeling: 'Moderate', diffusivity: 'Very Slow',
+    profile: 'Shallow to moderate depth in SiC',
+    damage: 'Moderate to high damage',
+    segregation: 'Minimal',
+    typical_energy: '10 keV – 400 keV',
+    typical_dose: '1\u00d710\u00b9\u00b2 – 1\u00d710\u00b9\u2076 cm\u207b\u00b2',
+    use_case: 'SiC N-type source/drain, ohmic contacts',
+    notes: 'Like Boron in SiC, diffusion is negligible. Profile shape is essentially unchanged after annealing. High activation anneal needed (>1500\u00b0C). Nuclear stopping is significant at low energies.'
+  },
+  'Silicon in GaAs': {
+    atomicNumber: 14, atomicMass: '28.09 amu', type: 'N-type', typeCode: 'N',
+    substrate: 'Gallium Arsenide', activationEnergy_eV: '~2.10 eV', D0_cm2s: 0.01,
+    channeling: 'Moderate', diffusivity: 'Slow',
+    profile: 'Moderate depth — lighter than Ge so deeper range in GaAs',
+    damage: 'Moderate; GaAs more sensitive to damage than Si',
+    segregation: 'Occupies Ga sites preferentially (donor behavior)',
+    typical_energy: '10 keV – 100 keV',
+    typical_dose: '1\u00d710\u00b9\u00b9 – 1\u00d710\u00b9\u00b3 cm\u207b\u00b2',
+    use_case: 'GaAs MESFET channel implants, HEMT structures',
+    notes: 'Amphoteric dopant — can occupy Ga (donor) or As (acceptor) sites. At low doses N-type dominates. Above 550\u00b0C anneal: N-type; below: P-type tendency increases. Se and Sn are nearly equal across the energy range.'
+  },
+  'Germanium in GaAs': {
+    atomicNumber: 32, atomicMass: '72.63 amu', type: 'N-type', typeCode: 'N',
+    substrate: 'Gallium Arsenide', activationEnergy_eV: '~2.30 eV', D0_cm2s: 0.005,
+    channeling: 'Low', diffusivity: 'Very Slow',
+    profile: 'Shallow, narrow — heavy ion in GaAs',
+    damage: 'High — similar atomic mass to Ga/As causes severe displacement',
+    segregation: 'Strong amphoteric behavior; site occupancy determines type',
+    typical_energy: '10 keV – 20 keV',
+    typical_dose: '1\u00d710\u00b9\u00b9 – 1\u00d710\u00b9\u00b3 cm\u207b\u00b2',
+    use_case: 'Shallow GaAs junctions, experimental devices',
+    notes: 'Strongly amphoteric. Very limited SRIM energy range available. Nuclear stopping dominates heavily at all available energies. Rarely used in production processes.'
+  }
+};
+
+// ============================================================
 const GROUPS={Silicon:['Boron','Gallium in Silicon','Phosphorus','Arsenic'],SiC:['Boron in SiC','Phosphorus in SiC'],GaAs:['Silicon in GaAs','Germanium in GaAs']};
 const TYPES={'Boron':'P','Gallium in Silicon':'P','Phosphorus':'N','Arsenic':'N','Boron in SiC':'P','Phosphorus in SiC':'N','Silicon in GaAs':'N','Germanium in GaAs':'N'};
 const COLORS={'Arsenic':'#1565C0','Phosphorus':'#E65100','Boron':'#2E7D32','Gallium in Silicon':'#7B1FA2','Silicon in GaAs':'#6A1B9A','Germanium in GaAs':'#00838F','Phosphorus in SiC':'#F9A825','Boron in SiC':'#AD1457'};
@@ -609,6 +783,49 @@ function sp(eKey,metal){
   return{Se,Sn,St,pctE:Se/St*100,pctN:Sn/St*100,dom:Se>=Sn?'Electronic':'Nuclear'};
 }
 
+// ============================================================
+// FILL DOPANT BEHAVIOR  (NEW)
+// ============================================================
+function fillBehavior(metal) {
+  const b = DOPANT_BEHAVIOR[metal];
+  if (!b) return;
+
+  document.getElementById('behaviorSubtitle').textContent = '— ' + metal;
+  document.getElementById('beh_Z').textContent      = b.atomicNumber;
+  document.getElementById('beh_M').textContent      = b.atomicMass;
+  document.getElementById('beh_sub').textContent    = b.substrate;
+  document.getElementById('beh_energy').textContent = b.typical_energy;
+  document.getElementById('beh_dose').textContent   = b.typical_dose;
+  document.getElementById('beh_Ea').textContent     = b.activationEnergy_eV;
+  document.getElementById('beh_profile').textContent  = b.profile;
+  document.getElementById('beh_damage').textContent   = b.damage;
+  document.getElementById('beh_seg').textContent      = b.segregation;
+  document.getElementById('beh_use').textContent      = b.use_case;
+  document.getElementById('beh_notes').textContent    = b.notes;
+
+  // Dopant type badge
+  const typeEl = document.getElementById('beh_type');
+  typeEl.innerHTML = '';
+  const badge = document.createElement('span');
+  badge.className = 'beh-badge beh-badge-' + b.typeCode;
+  badge.textContent = b.type;
+  typeEl.appendChild(badge);
+
+  // Channeling risk — color coded
+  const chEl = document.getElementById('beh_channel');
+  chEl.textContent = b.channeling;
+  chEl.className = b.channeling === 'High'     ? 'beh-val-high'
+                 : b.channeling === 'Moderate' ? 'beh-val-mod'
+                 : 'beh-val-low';
+
+  // Diffusivity — color coded
+  const difEl = document.getElementById('beh_diff');
+  difEl.textContent = b.diffusivity;
+  difEl.className = b.diffusivity === 'Fast'      ? 'beh-val-fast'
+                  : b.diffusivity === 'Very Slow' ? 'beh-val-vslow'
+                  : 'beh-val-slow';
+}
+
 function updateIonEnergyDropdown(){
   const metal=document.getElementById('metal-select').value,keys=Object.keys(metalIonData[metal]);
   ['energy-lower','energy-upper'].forEach((id,idx)=>{
@@ -618,7 +835,6 @@ function updateIonEnergyDropdown(){
   });
 }
 
-// ── Original log-log chart ──
 function buildSpChart(metal){
   const entries=Object.entries(metalIonData[metal]).filter(([,d])=>d.se!=null);
   const eV=entries.map(([k2])=>parseEV(k2)/1e3);
@@ -627,147 +843,60 @@ function buildSpChart(metal){
   spChart=new Chart(document.getElementById('spChart').getContext('2d'),{
     type:'line',
     data:{datasets:[
-      {label:'Sₑ Electronic',data:eV.map((x,i)=>({x,y:Se[i]})),borderColor:'#1565C0',pointRadius:0,borderWidth:2},
-      {label:'Sₙ Nuclear',   data:eV.map((x,i)=>({x,y:Sn[i]})),borderColor:'#E65100',pointRadius:0,borderWidth:2},
-      {label:'S_total',      data:eV.map((x,i)=>({x,y:St[i]})),borderColor:'#2E7D32',pointRadius:0,borderWidth:2.5,borderDash:[6,3]}
+      {label:'S\u2091 Electronic',data:eV.map((x,i)=>({x,y:Se[i]})),borderColor:'#1565C0',pointRadius:0,borderWidth:2},
+      {label:'S\u2099 Nuclear',   data:eV.map((x,i)=>({x,y:Sn[i]})),borderColor:'#E65100',pointRadius:0,borderWidth:2},
+      {label:'S_total',           data:eV.map((x,i)=>({x,y:St[i]})),borderColor:'#2E7D32',pointRadius:0,borderWidth:2.5,borderDash:[6,3]}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       scales:{x:{type:'logarithmic',title:{display:true,text:'Energy (keV)'},ticks:{callback:v=>v+''}},
-              y:{type:'logarithmic',title:{display:true,text:'Stopping Power [MeV/(mg/cm²)]'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(1)}}},
+              y:{type:'logarithmic',title:{display:true,text:'Stopping Power [MeV/(mg/cm\u00b2)]'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(1)}}},
       plugins:{legend:{display:true,position:'top'},
         tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(3),title:ctx=>ctx[0].parsed.x.toFixed(2)+' keV'}},
         zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}
   });
 }
 
-// ══════════════════════════════════════════════════════════════
-// NEW: Dark linear-scale stopping power chart (matches screenshot)
-// Y-axis: linear   X-axis: logarithmic with friendly tick labels
-// Nuclear = red (#E65100)  Electronic = blue (#42A5F5)
-// ══════════════════════════════════════════════════════════════
 function buildLinearSpChart(metal){
   const entries=Object.entries(metalIonData[metal]).filter(([,d])=>d.se!=null);
-  // x values in eV for log axis, labels formatted as keV / MeV
-  const eV_raw=entries.map(([k2])=>parseEV(k2)); // raw eV values
+  const eV_raw=entries.map(([k2])=>parseEV(k2));
   const Se=entries.map(([,d])=>d.se);
   const Sn=entries.map(([,d])=>d.sn);
-
-  // Friendly x-axis label formatter
   function fmtEnergy(eV){
     if(eV>=1e6) return (eV/1e6).toFixed(eV%1e6===0?0:2).replace(/\.?0+$/,'')+'M';
     return (eV/1e3).toFixed(eV%1e3===0?0:1).replace(/\.?0+$/,'')+'k';
   }
-
-  // Determine title from metal name
   const metalLabel = metal.includes('in ') ? metal : metal + ' in Silicon';
-  document.getElementById('linearSpTitle').textContent = metalLabel + ' — Stopping Power vs. Ion Energy';
-
+  document.getElementById('linearSpTitle').textContent = metalLabel + ' \u2014 Stopping Power vs. Ion Energy';
   if(linearSpChart)linearSpChart.destroy();
-
   const ctx=document.getElementById('linearSpChart').getContext('2d');
-
-  // Dark theme colours
-  const gridColor='rgba(255,255,255,0.08)';
-  const tickColor='#9ca3af';
-  const titleColor='#d1d5db';
-
+  const gridColor='rgba(255,255,255,0.08)',tickColor='#9ca3af',titleColor='#d1d5db';
   linearSpChart=new Chart(ctx,{
     type:'line',
-    data:{
-      datasets:[
-        {
-          label:'Nuclear dE/dx (MeV/(mg/cm²))',
-          data:eV_raw.map((x,i)=>({x,y:Sn[i]})),
-          borderColor:'#E65100',
-          backgroundColor:'rgba(230,81,0,0.08)',
-          pointRadius:0,
-          borderWidth:2.5,
-          tension:0.3,
-          fill:false
-        },
-        {
-          label:'Electronic dE/dx (MeV/(mg/cm²))',
-          data:eV_raw.map((x,i)=>({x,y:Se[i]})),
-          borderColor:'#42A5F5',
-          backgroundColor:'rgba(66,165,245,0.08)',
-          pointRadius:0,
-          borderWidth:2.5,
-          tension:0.3,
-          fill:false
-        }
-      ]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      animation:{duration:400},
+    data:{datasets:[
+      {label:'Nuclear dE/dx (MeV/(mg/cm\u00b2))',data:eV_raw.map((x,i)=>({x,y:Sn[i]})),borderColor:'#E65100',backgroundColor:'rgba(230,81,0,0.08)',pointRadius:0,borderWidth:2.5,tension:0.3,fill:false},
+      {label:'Electronic dE/dx (MeV/(mg/cm\u00b2))',data:eV_raw.map((x,i)=>({x,y:Se[i]})),borderColor:'#42A5F5',backgroundColor:'rgba(66,165,245,0.08)',pointRadius:0,borderWidth:2.5,tension:0.3,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
       layout:{padding:{top:10,right:16,bottom:8,left:8}},
       scales:{
-        x:{
-          type:'logarithmic',
-          title:{display:true,text:'Ion Energy',color:titleColor,font:{size:12}},
-          grid:{color:gridColor,drawBorder:false},
-          ticks:{
-            color:tickColor,
-            maxRotation:0,
-            callback:function(value){
-              // Only show ticks at round values
-              const friendly=[1e4,2.25e4,5.5e4,1.4e5,3.25e5,8e5,1.8e6,4.5e6,1e7];
-              const match=friendly.find(f=>Math.abs(value-f)/f<0.05);
-              return match?fmtEnergy(match):null;
-            }
-          }
-        },
-        y:{
-          type:'linear',
-          title:{display:true,text:'dE/dx (MeV/(mg/cm²))',color:titleColor,font:{size:12}},
-          grid:{color:gridColor,drawBorder:false},
-          ticks:{color:tickColor},
-          beginAtZero:true
-        }
+        x:{type:'logarithmic',title:{display:true,text:'Ion Energy',color:titleColor,font:{size:12}},grid:{color:gridColor,drawBorder:false},
+           ticks:{color:tickColor,maxRotation:0,callback:function(value){const friendly=[1e4,2.25e4,5.5e4,1.4e5,3.25e5,8e5,1.8e6,4.5e6,1e7];const match=friendly.find(f=>Math.abs(value-f)/f<0.05);return match?fmtEnergy(match):null;}}},
+        y:{type:'linear',title:{display:true,text:'dE/dx (MeV/(mg/cm\u00b2))',color:titleColor,font:{size:12}},grid:{color:gridColor,drawBorder:false},ticks:{color:tickColor},beginAtZero:true}
       },
-      plugins:{
-        legend:{display:false},  // custom legend in HTML
-        title:{
-          display:true,
-          text: metalLabel + ' — Stopping Power vs. Ion Energy',
-          color:'#f9fafb',
-          font:{size:14,weight:'bold'},
-          padding:{bottom:8}
-        },
-        tooltip:{
-          backgroundColor:'rgba(17,24,39,0.92)',
-          titleColor:'#f9fafb',
-          bodyColor:'#d1d5db',
-          borderColor:'rgba(255,255,255,0.15)',
-          borderWidth:1,
-          callbacks:{
-            title:ctx=>fmtEnergy(ctx[0].parsed.x)+' — Ion Energy',
-            label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toFixed(4)
-          }
-        },
-        zoom:{
-          zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},
-          pan:{enabled:true,mode:'xy'}
-        }
-      }
-    }
+      plugins:{legend:{display:false},
+        title:{display:true,text:metalLabel+' \u2014 Stopping Power vs. Ion Energy',color:'#f9fafb',font:{size:14,weight:'bold'},padding:{bottom:8}},
+        tooltip:{backgroundColor:'rgba(17,24,39,0.92)',titleColor:'#f9fafb',bodyColor:'#d1d5db',borderColor:'rgba(255,255,255,0.15)',borderWidth:1,
+          callbacks:{title:ctx=>fmtEnergy(ctx[0].parsed.x)+' \u2014 Ion Energy',label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toFixed(4)}},
+        zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}
   });
-
-  // Apply dark canvas background via plugin
-  // (Chart.js doesn't natively fill canvas bg, so we use a beforeDraw plugin registered globally)
 }
 
-// Register a one-time global plugin for dark canvas background
 Chart.register({
   id:'darkBg',
   beforeDraw(chart){
     if(chart.canvas.id!=='linearSpChart')return;
-    const{ctx,chartArea}=chart;
-    ctx.save();
-    ctx.fillStyle='#111827';
-    ctx.fillRect(0,0,chart.width,chart.height);
-    ctx.restore();
+    const{ctx}=chart;
+    ctx.save();ctx.fillStyle='#111827';ctx.fillRect(0,0,chart.width,chart.height);ctx.restore();
   }
 });
 
@@ -786,8 +915,8 @@ function buildOriginalChart(xlo,Nstlo,Ndilo,xhi,Nsthi,Ndihi,tox,eLo,eHi){
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       scales:{x:{type:'linear',title:{display:true,text:'x (cm)'}},
-              y:{type:'logarithmic',title:{display:true,text:'N(x) (cm⁻³)'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(0)}}},
-      plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(2)+' cm⁻³',title:ctx=>'x: '+ctx[0].parsed.x.toExponential(2)+' cm'}},
+              y:{type:'logarithmic',title:{display:true,text:'N(x) (cm\u207b\u00b3)'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(0)}}},
+      plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(2)+' cm\u207b\u00b3',title:ctx=>'x: '+ctx[0].parsed.x.toExponential(2)+' cm'}},
         zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy',sensitivity:3},pan:{enabled:true,mode:'xy'}}}}
   });
 }
@@ -795,7 +924,7 @@ function buildOriginalChart(xlo,Nstlo,Ndilo,xhi,Nsthi,Ndihi,tox,eLo,eHi){
 function buildCompChart(selMetal,eLo,nb,q,tox,Tc,ts){
   const group=getGroup(selMetal),selType=TYPES[selMetal];
   const members=GROUPS[group].filter(m=>TYPES[m]===selType);
-  document.getElementById('groupLabel').textContent=group+' — '+(selType==='P'?'P-type':'N-type');
+  document.getElementById('groupLabel').textContent=group+' \u2014 '+(selType==='P'?'P-type':'N-type');
   let xMin=Infinity,xMax=-Infinity;const mdata=[];
   for(const m of members){
     const ek=closestE(m,eLo),{rp,sig}=metalIonData[m][ek];
@@ -813,7 +942,7 @@ function buildCompChart(selMetal,eLo,nb,q,tox,Tc,ts){
     if(isSel){
       const dm=(ts/60).toFixed(1);
       const pts2=xs.map(x=>({x,y:Math.max(npt*Math.exp(-((x-rp)**2)/(2*sigt**2))-nb,0)})).filter(p=>p.y>0);
-      datasets.push({label:m+' after '+dm+'min @'+Tc+'°C',data:pts2,borderColor:col,pointRadius:0,borderWidth:2,borderDash:[7,4],order:0});
+      datasets.push({label:m+' after '+dm+'min @'+Tc+'\u00b0C',data:pts2,borderColor:col,pointRadius:0,borderWidth:2,borderDash:[7,4],order:0});
     }
   }
   const allY=datasets.flatMap(d=>d.data.map(p=>p.y)).filter(y=>y>0);
@@ -823,15 +952,15 @@ function buildCompChart(selMetal,eLo,nb,q,tox,Tc,ts){
     type:'line',data:{datasets},
     options:{responsive:true,maintainAspectRatio:false,
       scales:{x:{type:'linear',title:{display:true,text:'x (cm)'}},
-              y:{type:'logarithmic',title:{display:true,text:'N(x) (cm⁻³)'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(0)}}},
+              y:{type:'logarithmic',title:{display:true,text:'N(x) (cm\u207b\u00b3)'},ticks:{callback:v=>'10^'+Math.log10(v).toFixed(0)}}},
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(2)+' cm⁻³',title:ctx=>'x: '+ctx[0].parsed.x.toExponential(3)+' cm'}},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toExponential(2)+' cm\u207b\u00b3',title:ctx=>'x: '+ctx[0].parsed.x.toExponential(3)+' cm'}},
         zoom:{zoom:{wheel:{enabled:true,speed:.1},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}
   });
   const leg=document.getElementById('compLegend');leg.innerHTML='';
   const dm=(ts/60).toFixed(1);
   const hdr=document.createElement('div');hdr.className='comp-legend-header';
-  hdr.textContent=(selType==='P'?'▲ P-type':'▼ N-type')+' — '+group;leg.appendChild(hdr);
+  hdr.textContent=(selType==='P'?'\u25b2 P-type':'\u25bc N-type')+' \u2014 '+group;leg.appendChild(hdr);
   for(const{m,ek}of mdata){
     const isSel=m===selMetal,col=COLORS[m],eNote=ek!==eLo?' @'+ek:'';
     const item=document.createElement('div');item.className='comp-legend-item';
@@ -841,7 +970,7 @@ function buildCompChart(selMetal,eLo,nb,q,tox,Tc,ts){
     if(isSel){
       const i2=document.createElement('div');i2.className='comp-legend-item';
       const l2=document.createElement('span');l2.style.cssText=`display:inline-block;width:28px;height:3px;background:repeating-linear-gradient(90deg,${col} 0,${col} 7px,transparent 7px,transparent 11px);border-radius:2px;`;
-      const b2=document.createElement('span');b2.textContent=m+' after '+dm+'min @'+Tc+'°C';b2.style.fontStyle='italic';
+      const b2=document.createElement('span');b2.textContent=m+' after '+dm+'min @'+Tc+'\u00b0C';b2.style.fontStyle='italic';
       i2.appendChild(l2);i2.appendChild(b2);leg.appendChild(i2);
     }
   }
@@ -922,14 +1051,18 @@ function calculateResults(){
   document.getElementById('toxValue').textContent=tox.toExponential(4);
   document.getElementById('toxValueJn').textContent=tox.toExponential(4);
   fillCol('Low',rLo,eLo);fillCol('High',rHi,eHi);
+
+  // Semiconductor type info
   const semInfo=(metal.includes('GaAs')||metal.includes('Gallium'))?Tc>=550?{type:'n-type',cls:'bg-primary'}:{type:'p-type',cls:'bg-success'}:null;
   const sc=document.getElementById('semiconductorTypeCard');
   if(semInfo){sc.style.display='block';const el=document.getElementById('semiconductorType');el.textContent=semInfo.type;el.className='badge '+semInfo.cls;}
   else sc.style.display='none';
+
   buildSpChart(metal);
-  buildLinearSpChart(metal);   // ← NEW dark chart
+  buildLinearSpChart(metal);
   buildOriginalChart(rLo.x_vals,rLo.N_static,rLo.N_diff,rHi.x_vals,rHi.N_static,rHi.N_diff,tox,eLo,eHi);
   buildCompChart(metal,eLo,nb,q,tox,Tc,ts);
+  fillBehavior(metal);   // ← NEW: populate dopant behavior card
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -944,7 +1077,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('resetZoomSp').onclick=()=>spChart&&spChart.resetZoom();
   document.getElementById('zoomInSp').onclick=()=>spChart&&spChart.zoom(1.2);
   document.getElementById('zoomOutSp').onclick=()=>spChart&&spChart.zoom(0.8);
-  // ── New dark linear chart zoom buttons ──
   document.getElementById('resetZoomLinearSp').onclick=()=>linearSpChart&&linearSpChart.resetZoom();
   document.getElementById('zoomInLinearSp').onclick=()=>linearSpChart&&linearSpChart.zoom(1.2);
   document.getElementById('zoomOutLinearSp').onclick=()=>linearSpChart&&linearSpChart.zoom(0.8);
